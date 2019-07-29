@@ -6,28 +6,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function accountBelongsToCaller(uid) {
+        return request.auth != null && request.auth.uid == uid;
+    }
+
     function getRoles() {
-        return get(/databases/$(database)/documents/roles/$(request.auth.uid).data;
+        return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.roles;
     }
 
     function hasRoles(roles) {
-        return isAuthenticated() && getRoles().keys().hasAll(keys)
+        return isAuthenticated() && getRoles().hasAll(keys)
     }
 
-    match /roles/{uid} {
-        function isWritingRoles(roles) {
-            return roles.hasAll(resource.data.keys());
-        }
+    function disallowModifyingAccountExceptRoles() {
+        return !(resource.data.keys().length === 1 && ("roles" in resource.data.keys()));
+    }
 
-        function allowRoleManagement(manager, roles) {
-            return hasRoles([manager]) && isWritingRoles(roles);
-        }
+    function allowRoleManagementOnly(manager, roles) {
+        return hasRoles([manager]) && disallowModifyingAccountExceptRoles() && roles.hasAll(resource.data.roles);
+    }
 
-        allow get: if true;
-        allow list: if false;
-        allow write: if allowRoleManagement("admin", ["manager", "author"])
-                    ||  allowRoleManagement("manager", ["author"]);
+    function disallowSelfRolesManagement() {
+        return !("roles" in resource.data.keys());
+    }
 
+    function allowCreateAccountWithEmptyRoles(uid) {
+        return accountBelongsToCaller(uid) && ("roles" in resource.data.keys()) && resource.data.roles.length == 0;
+    }
+
+    match /accounts/{uid} {
+        allow read if: accountBelongsToCaller(uid) || callerHasRoles([ "role_manager" ]);
+        allow create if: allowCreateAccountWithEmptyRoles(uid);
+        allow write if: 
+                (accountBelongsToCaller(uid) && disallowSelfRolesManagement())
+             || allowRoleManagementOnly("role_manager", [ "author" ])
+             || allowRoleManagementOnly("admin", [ "author", "role_manager" ]);
     }
 
     match /posts/{post} {

@@ -5,13 +5,14 @@ import ow from "ow";
 import { ow_catch } from "./util";
 
 export interface FirestoreRolesConfiguration {
-    rolesCollection: string;
+    accountsCollection: string;
     roles: { [k: string]: FirestoreRolesConfiguration.Role };
 }
 
 export namespace FirestoreRolesConfiguration {
     export function validate(c: FirestoreRolesConfiguration) {
-        ow(c.rolesCollection, "FirestoreRolesConfiguration.rolesCollection", ow.string.nonEmpty);
+        ow(c.accountsCollection, "FirestoreRolesConfiguration.accountsCollection", ow.string.nonEmpty);
+
         ow(
             c.roles,
             "FirestoreRolesConfiguration.roles",
@@ -19,6 +20,10 @@ export namespace FirestoreRolesConfiguration {
                 ow.object.is(o => ow_catch(() => FirestoreRolesConfiguration.Role.validate(o as Role))),
             ),
         );
+    }
+
+    export function isAllowedRole(config: FirestoreRolesConfiguration, role: string) {
+        return typeof config.roles[role] !== undefined;
     }
 
     export interface Role {

@@ -40,6 +40,17 @@ export class FirestoreRoles {
 
         await this.firestore.runTransaction(async () => await this.doRequestRoles(uid, roles));
     }
+
+    public async setRoles(uid: string, roles: string[]) {
+        ow(uid, "FirestoreRoles.setRoles(uid)", ow.string.nonEmpty);
+        ow(
+            roles,
+            "FirestoreRoles.setRoles(roles)",
+            ow.array.ofType(ow.string.nonEmpty.is(v => FirestoreRolesConfiguration.isAllowedRole(this.config, v))),
+        );
+
+        await this.saveRoles(uid, roles);
+    }
     private async doRequestRoles(uid: string, newRolesToRequest: string[]) {
         const accountRecord = await this.getAccountRecord(uid);
         const updatedRequestedRoles = _.uniq([...accountRecord.requestedRoles, ...newRolesToRequest]);
@@ -55,6 +66,13 @@ export class FirestoreRoles {
         RequestedRolesHolder.validate(fieldsToUpdate, this.config);
         await this.getUserDoc(uid).set(fieldsToUpdate);
     }
+
+    private async saveRoles(uid: string, roles: string[]) {
+        const fieldsToUpdate: RolesHolder = {
+            roles,
+        };
+        RolesHolder.validate(fieldsToUpdate, this.config);
+        await this.getUserDoc(uid).set(fieldsToUpdate);
     }
 
     private getUserDoc(uid: string): FirestoreEquivalent.DocumentReferenceEquivalent {

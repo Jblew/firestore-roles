@@ -51,6 +51,11 @@ export class FirestoreRoles {
         await this.firestore.runTransaction(async () => await this.doRequestRoles(uid, roles));
     }
 
+    public async getRequestedRoles(uid: string): Promise<string[]> {
+        const aRec = await this.getAccountRecord(uid);
+        return aRec.requestedRoles;
+    }
+
     public async setRoles(uid: string, roles: string[]) {
         ow(uid, "FirestoreRoles.setRoles(uid)", ow.string.nonEmpty);
         ow(

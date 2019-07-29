@@ -2,7 +2,7 @@ import { UserInfo as FirebaseUser } from "firebase/app";
 import * as _ from "lodash";
 import ow from "ow";
 
-import { FirestoreRolesConfiguration } from "./FirestoreRolesConfiguration";
+import { Configuration } from "./Configuration";
 import { FirestoreRolesError } from "./FirestoreRolesError";
 import { AccountRecord } from "./model/AccountRecord";
 import { RequestedRolesHolder } from "./model/RequestedRolesHolder";
@@ -10,11 +10,11 @@ import { RolesHolder } from "./model/RolesHolder";
 import { FirestoreEquivalent } from "./types/FirestoreEquivalent";
 
 export class FirestoreRoles {
-    private config: FirestoreRolesConfiguration;
+    private config: Configuration;
     private firestore: FirestoreEquivalent;
 
-    public constructor(config: FirestoreRolesConfiguration, firestore: FirestoreEquivalent) {
-        FirestoreRolesConfiguration.validate(config);
+    public constructor(config: Configuration, firestore: FirestoreEquivalent) {
+        Configuration.validate(config);
         this.config = config;
 
         this.firestore = firestore;
@@ -35,7 +35,7 @@ export class FirestoreRoles {
         ow(
             roles,
             "FirestoreRoles.requestRoles(roles)",
-            ow.array.ofType(ow.string.nonEmpty.is(v => FirestoreRolesConfiguration.isAllowedRole(this.config, v))),
+            ow.array.ofType(ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v))),
         );
 
         await this.firestore.runTransaction(async () => await this.doRequestRoles(uid, roles));
@@ -46,7 +46,7 @@ export class FirestoreRoles {
         ow(
             roles,
             "FirestoreRoles.setRoles(roles)",
-            ow.array.ofType(ow.string.nonEmpty.is(v => FirestoreRolesConfiguration.isAllowedRole(this.config, v))),
+            ow.array.ofType(ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v))),
         );
 
         await this.saveRoles(uid, roles);
@@ -57,7 +57,7 @@ export class FirestoreRoles {
         ow(
             rolesToRemove,
             "FirestoreRoles.removeFromRequestedRoles(rolesToRemove)",
-            ow.array.ofType(ow.string.nonEmpty.is(v => FirestoreRolesConfiguration.isAllowedRole(this.config, v))),
+            ow.array.ofType(ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v))),
         );
 
         await this.firestore.runTransaction(async () => await this.doRemoveFromRequestedRoles(uid, rolesToRemove));

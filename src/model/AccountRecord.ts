@@ -1,7 +1,7 @@
 import { UserInfo as FirebaseUser } from "firebase/app";
 import ow from "ow";
 
-import { FirestoreRolesConfiguration } from "../FirestoreRolesConfiguration";
+import { Configuration } from "../Configuration";
 
 import { RequestedRolesHolder } from "./RequestedRolesHolder";
 import { RolesHolder } from "./RolesHolder";
@@ -20,7 +20,7 @@ export interface AccountRecord extends ParentType {
 }
 
 export namespace AccountRecord {
-    export function validate(ar: AccountRecord, config: FirestoreRolesConfiguration) {
+    export function validate(ar: AccountRecord, config: Configuration) {
         ow(ar.uid, "AccountRecord.uid", ow.string.nonEmpty);
         ow(ar.providerId, "AccountRecord.providerId", ow.string.nonEmpty);
         ow(ar.displayName, "AccountRecord.displayName", ow.optional.string.nonEmpty);

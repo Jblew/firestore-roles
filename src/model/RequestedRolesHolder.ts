@@ -1,17 +1,17 @@
 import ow from "ow";
 
-import { FirestoreRolesConfiguration } from "../FirestoreRolesConfiguration";
+import { Configuration } from "../Configuration";
 
 export interface RequestedRolesHolder {
     requestedRoles: string[];
 }
 
 export namespace RequestedRolesHolder {
-    export function validate(rrh: RequestedRolesHolder, config: FirestoreRolesConfiguration) {
+    export function validate(rrh: RequestedRolesHolder, config: Configuration) {
         ow(
             rrh.requestedRoles,
             "RequestedRolesHolder.requestedRoles",
-            ow.array.ofType(ow.string.nonEmpty.is(v => FirestoreRolesConfiguration.isAllowedRole(config, v))),
+            ow.array.ofType(ow.string.nonEmpty.is(v => Configuration.isAllowedRole(config, v))),
         );
     }
 

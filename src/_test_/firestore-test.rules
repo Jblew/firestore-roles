@@ -14,8 +14,12 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.roles;
     }
 
-    function hasRoles(roles) {
+    function hasAllOfRoles(roles) {
         return isAuthenticated() && getRoles().hasAll(keys)
+    }
+
+    function hasAnyOFRoles(roles) {
+        return isAuthenticated() && getRoles().hasAny(keys)
     }
 
     function disallowModifyingAccountExceptRoles() {
@@ -35,9 +39,9 @@ service cloud.firestore {
     }
 
     match /accounts/{uid} {
-        allow read if: accountBelongsToCaller(uid) || callerHasRoles([ "role_manager" ]);
+        allow read if: accountBelongsToCaller(uid);
         allow create if: allowCreateAccountWithEmptyRoles(uid);
-        allow write if: 
+        allow update, delete, read if: 
                 (accountBelongsToCaller(uid) && disallowSelfRolesManagement())
              || allowRoleManagementOnly("role_manager", [ "author" ])
              || allowRoleManagementOnly("admin", [ "author", "role_manager" ]);
@@ -45,6 +49,6 @@ service cloud.firestore {
 
     match /posts/{post} {
         allow read: if true;
-        allow write: if isAuthenticated() && hasRoles(["author"]);
+        allow write: if isAuthenticated() && hasAnyOFRoles(["author"]);
     }
 }

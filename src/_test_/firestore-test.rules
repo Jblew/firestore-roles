@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getRoles() {
+        return get(/databases/$(database)/documents/roles/$(request.auth.uid).data;
+    }
+
+    function hasRoles(roles) {
+        return isAuthenticated() && getRoles().keys().hasAll(keys)
+    }
+
+    match /roles/{uid} {
+        function isWritingRoles(roles) {
+            return roles.hasAll(resource.data.keys());
+        }
+
+        function allowRoleManagement(manager, roles) {
+            return hasRoles([manager]) && isWritingRoles(roles);
+        }
+
+        allow get: if true;
+        allow list: if false;
+        allow write: if allowRoleManagement("admin", ["manager", "author"])
+                    ||  allowRoleManagement("manager", ["author"]);
+
+    }
+
+    match /posts/{post} {
+        allow read: if true;
+        allow write: if isAuthenticated() && hasRoles(["author"]);
+    }
+}

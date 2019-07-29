@@ -1,4 +1,3 @@
-import { UserInfo as FirebaseUser } from "firebase/app";
 import * as _ from "lodash";
 import ow from "ow";
 
@@ -7,6 +6,7 @@ import { FirestoreRolesError } from "./FirestoreRolesError";
 import { AccountRecord } from "./model/AccountRecord";
 import { RequestedRolesHolder } from "./model/RequestedRolesHolder";
 import { RolesHolder } from "./model/RolesHolder";
+import { FirebaseAccount } from "./types/FirebaseAccount";
 import { FirestoreEquivalent } from "./types/FirestoreEquivalent";
 
 export class FirestoreRoles {
@@ -20,7 +20,17 @@ export class FirestoreRoles {
         this.firestore = firestore;
     }
 
-    public async registerUser(user: FirebaseUser) {
+    public async getRoles(uid: string): Promise<string[]> {
+        const aRec = await this.getAccountRecord(uid);
+        return aRec.roles;
+    }
+
+    public async hasRole(uid: string, role: string): Promise<boolean> {
+        const roles = await this.getRoles(uid);
+        return roles.indexOf(role) >= 0;
+    }
+
+    public async registerUser(user: FirebaseAccount) {
         const accountRecord: AccountRecord = {
             ...user,
             roles: [],

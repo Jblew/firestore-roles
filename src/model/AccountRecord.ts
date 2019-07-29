@@ -1,12 +1,12 @@
-import { UserInfo as FirebaseUser } from "firebase/app";
 import ow from "ow";
 
 import { Configuration } from "../Configuration";
+import { FirebaseAccount } from "../types/FirebaseAccount";
 
 import { RequestedRolesHolder } from "./RequestedRolesHolder";
 import { RolesHolder } from "./RolesHolder";
 
-type ParentType = FirebaseUser & RolesHolder & RequestedRolesHolder;
+type ParentType = FirebaseAccount & RolesHolder & RequestedRolesHolder;
 export interface AccountRecord extends ParentType {
     displayName: string | null;
     email: string | null;

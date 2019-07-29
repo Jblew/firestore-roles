@@ -13,7 +13,7 @@ export namespace Configuration {
     export function validate(c: Configuration) {
         ow(c.accountsCollection, "Configuration.accountsCollection", ow.string.nonEmpty);
 
-        const roleNames = _.keys(c);
+        const roleNames = _.keys(c.roles);
         ow(
             c.roles,
             "Configuration.roles",
@@ -27,13 +27,22 @@ export namespace Configuration {
         return typeof config.roles[role] !== undefined;
     }
 
+    export const DEFAULT: Configuration = {
+        accountsCollection: "accounts",
+        roles: {
+            admin: { manages: ["manager", "editor"] },
+            manager: { manages: ["editor"] },
+            editor: { manages: [] },
+        },
+    };
+
     export interface Role {
         manages: string[];
     }
 
     export namespace Role {
-        export function validate(r: Role, roleNames: string[]) {
-            ow(r.manages, "Role.manages", ow.array.ofType(ow.string.nonEmpty.oneOf(roleNames)));
+        export function validate(role: Role, roleNames: string[]) {
+            ow(role.manages, "Role.manages", ow.array.ofType(ow.string.nonEmpty.oneOf(roleNames)));
         }
     }
 }

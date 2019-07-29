@@ -1,94 +1,46 @@
-import * as admin from "firebase-admin";
-import ow from "ow";
+// tslint:disable max-classes-per-file
 
 import { FirestoreEquivalent } from "../types/FirestoreEquivalent";
 
-import { PersistenceProvider } from "./PersistenceProvider";
-import { PersistenceRecord } from "./PersistenceRecord";
+export class FirestoreEquivalentMock implements FirestoreEquivalent {
+    public collections: { [x: string]: FirestoreEquivalentMock.CollectionRef } = {};
 
-export class FirestorePersistenceProvider implements PersistenceProvider {
-    private firestore: admin.firestore.Firestore | FirestoreEquivalent;
-    private debugFn: (msg: string) => void;
-
-    public constructor(
-        firestore: FirestoreEquivalent,
-        debugFn: (msg: string) => void = (msg: string) => {
-            /* */
-        },
-    ) {
-        this.firestore = firestore;
-        ow(this.firestore, "firestore", ow.object);
-
-        this.debugFn = debugFn;
+    public async runTransaction(asyncTransactionFn: (trx: any) => Promise<void>): Promise<void> {
+        await asyncTransactionFn(null);
     }
 
-    public async updateAndGet(
-        collectionName: string,
-        recordName: string,
-        updaterFn: (record: PersistenceRecord) => PersistenceRecord,
-    ): Promise<PersistenceRecord> {
-        let result: PersistenceRecord | undefined;
-        await this.runTransaction(async () => {
-            const record = await this.getRecord(collectionName, recordName);
-            const updatedRecord = updaterFn(record);
-            if (this.hasRecordChanged(record, updatedRecord)) {
-                await this.saveRecord(collectionName, recordName, updatedRecord);
-            }
-            result = updatedRecord;
-        });
-        if (!result) throw new Error("FirestorePersistenceProvider: Persistence record could not be updated");
-        return result;
+    public collection(name: string): FirestoreEquivalent.CollectionReferenceEquivalent {
+        return (this.collections[name] = this.collections[name] || new FirestoreEquivalentMock.CollectionRef());
     }
+}
 
-    public setDebugFn(debugFn: (msg: string) => void) {
-        this.debugFn = debugFn;
-    }
+export namespace FirestoreEquivalentMock {
+    export class CollectionRef implements FirestoreEquivalent.CollectionReferenceEquivalent {
+        public documents: { [x: string]: DocumentRef } = {};
 
-    private async runTransaction(asyncTransactionFn: () => Promise<void>): Promise<void> {
-        return await this.firestore.runTransaction(async (transaction: any) => {
-            await asyncTransactionFn();
-        });
-    }
-
-    private async getRecord(collectionName: string, recordName: string): Promise<PersistenceRecord> {
-        const docSnapshot = await this.getDocumentRef(collectionName, recordName).get();
-        this.debugFn("Got record from collection=" + collectionName + ", document=" + recordName);
-
-        if (!docSnapshot.exists) return this.createEmptyRecord();
-
-        const record: PersistenceRecord = docSnapshot.data() as PersistenceRecord;
-        PersistenceRecord.validate(record);
-        return record;
-    }
-
-    private async saveRecord(collectionName: string, recordName: string, record: PersistenceRecord): Promise<void> {
-        this.debugFn("Save record collection=" + collectionName + ", document=" + recordName);
-        await this.getDocumentRef(collectionName, recordName).set(record);
-    }
-
-    private getDocumentRef(
-        collectionName: string,
-        recordName: string,
-    ): FirestoreEquivalent.DocumentReferenceEquivalent {
-        return this.firestore.collection(collectionName).doc(recordName);
-    }
-
-    private createEmptyRecord(): PersistenceRecord {
-        return {
-            u: [],
-        };
-    }
-
-    private hasRecordChanged(oldRecord: PersistenceRecord, newRecord: PersistenceRecord): boolean {
-        if (oldRecord.u.length !== newRecord.u.length) {
-            return true;
-        } else {
-            const a1 = oldRecord.u.concat().sort();
-            const a2 = newRecord.u.concat().sort();
-            for (let i = 0; i < a1.length; i++) {
-                if (a1[i] !== a2[i]) return true;
-            }
-            return false;
+        public doc(name: string): FirestoreEquivalent.DocumentReferenceEquivalent {
+            return (this.documents[name] = this.documents[name] || new DocumentRef());
         }
+    }
+
+    export class DocumentRef implements FirestoreEquivalentMock.DocumentRef {
+        private data: any = undefined;
+        private exists: boolean = false;
+        public async get(): Promise<DocumentSnapshot> {
+            return {
+                exists: this.exists,
+                data: () => this.data,
+            };
+        }
+
+        public async set(newData: object): Promise<any> {
+            this.data = newData;
+            this.exists = true;
+        }
+    }
+
+    export interface DocumentSnapshot {
+        exists: boolean;
+        data(): object | undefined;
     }
 }

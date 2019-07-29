@@ -1,0 +1,29 @@
+dist: xenial
+language: node_js
+node_js:
+    - "8"
+
+branches:
+    except:
+        - /^v[0-9]/
+
+before_install:
+    - npm i -g firebase firebase-tools
+    - firebase setup:emulators:firestore
+
+install:
+    - npm ci
+
+script:
+    - npm run build
+    - npm run test
+    - npm run verify
+
+deploy:
+    - provider: script
+      script: npx semantic-release
+      skip_cleanup: true
+      node_js: 8
+      on:
+          tags: false
+          branch: master

@@ -21,7 +21,7 @@ export function mock(config: Configuration = Configuration.DEFAULT) {
 
 export async function startupAll() {
     this.timeout(4000);
-    const { firestore } = mock("firestore", {});
+    const { firestore } = mock();
     await firestore
         .collection("a")
         .doc("a")

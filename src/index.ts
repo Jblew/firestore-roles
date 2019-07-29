@@ -1,0 +1,1 @@
+export { FirestoreRolesConfiguration } from "./FirestoreRolesConfiguration";

@@ -1,14 +1,14 @@
 export interface FirestoreEquivalent {
     runTransaction(tCallback: (transaction: any) => Promise<void>): Promise<void>;
 
-    collection(
-        name: string,
-    ): {
-        doc(name: string): FirestoreEquivalent.DocumentReferenceEquivalent;
-    };
+    collection(name: string): FirestoreEquivalent.CollectionReferenceEquivalent;
 }
 
 export namespace FirestoreEquivalent {
+    export interface CollectionReferenceEquivalent {
+        doc(name: string): DocumentReferenceEquivalent;
+    }
+
     export interface DocumentReferenceEquivalent {
         get(): Promise<{
             exists: boolean;

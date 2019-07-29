@@ -1,0 +1,50 @@
+import { UserInfo as FirebaseUser } from "firebase/app";
+import ow from "ow";
+
+import { FirestoreRolesConfiguration } from "../FirestoreRolesConfiguration";
+
+import { RequestedRolesHolder } from "./RequestedRolesHolder";
+import { RolesHolder } from "./RolesHolder";
+
+type ParentType = FirebaseUser & RolesHolder & RequestedRolesHolder;
+export interface AccountRecord extends ParentType {
+    displayName: string | null;
+    email: string | null;
+    phoneNumber: string | null;
+    photoURL: string | null;
+    providerId: string;
+    uid: string;
+
+    roles: string[];
+    requestedRoles: string[];
+}
+
+export namespace AccountRecord {
+    export function validate(ar: AccountRecord, config: FirestoreRolesConfiguration) {
+        ow(ar.uid, "AccountRecord.uid", ow.string.nonEmpty);
+        ow(ar.providerId, "AccountRecord.providerId", ow.string.nonEmpty);
+        ow(ar.displayName, "AccountRecord.displayName", ow.optional.string.nonEmpty);
+        ow(ar.email, "AccountRecord.email", ow.optional.string.nonEmpty);
+        ow(ar.phoneNumber, "AccountRecord.phoneNumber", ow.optional.string.nonEmpty);
+        ow(ar.providerId, "AccountRecord.providerId", ow.optional.string.nonEmpty);
+        RolesHolder.validate(ar, config);
+        RequestedRolesHolder.validate(ar, config);
+
+        ow(
+            ar.requestedRoles,
+            "AccountRecord.requestedRoles cannot already be in roles",
+            ow.array.ofType(ow.string.nonEmpty.not.oneOf(ar.roles)),
+        );
+    }
+
+    export const KEYS: { [x in keyof AccountRecord]: keyof AccountRecord } = Object.freeze({
+        ...RolesHolder.KEYS,
+        ...RequestedRolesHolder.KEYS,
+        displayName: "displayName",
+        email: "email",
+        phoneNumber: "phoneNumber",
+        photoURL: "photoURL",
+        providerId: "providerId",
+        uid: "uid",
+    });
+}

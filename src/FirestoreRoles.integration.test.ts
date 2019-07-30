@@ -180,8 +180,41 @@ describe("FirestoreRoles", () => {
     });
 
     describe("requestRoles", () => {
-        it.skip("Adds specified roles to requestedRoles");
-        it.skip("Does not remove previous roles when adding new ones");
+        it("Adds specified roles to requestedRoles", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const reqRoles: string[] = ["manager", "admin"];
+            await roles.requestRoles(sampleAccount.uid, reqRoles);
+
+            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .that.has.members(reqRoles);
+        });
+
+        it("Fails to request not defined role", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const reqRoles = ["nonexistent-role"];
+            await expect(roles.requestRoles(sampleAccount.uid, reqRoles)).to.eventually.be.rejectedWith(
+                "Expected string `e` `nonexistent-role`",
+            );
+        });
+
+        it("Does not remove previous roles when adding new ones", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const reqRoles: string[] = ["manager"];
+            await roles.requestRoles(sampleAccount.uid, reqRoles);
+
+            const reqRoles2: string[] = ["admin"];
+            await roles.requestRoles(sampleAccount.uid, reqRoles2);
+
+            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .that.has.members([...reqRoles, ...reqRoles2]);
+        });
     });
 
     describe("removeFromRequestedRoles", () => {

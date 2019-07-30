@@ -28,8 +28,8 @@ export namespace Configuration {
         );
     }
 
-    export function isAllowedRole(config: Configuration, role: string) {
-        return typeof config.roles[role] !== undefined;
+    export function isAllowedRole(config: Configuration, role: string): boolean {
+        return typeof config.roles[role] !== "undefined";
     }
 
     export const DEFAULT: Configuration = {

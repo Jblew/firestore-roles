@@ -27,7 +27,9 @@ const config: Configuration.Optional = {
     },
 };
 
-describe("FirestoreRoles", () => {
+describe("FirestoreRoles", function() {
+    this.timeout(3000);
+
     describe("registerUser", () => {
         it("Adds user to database", async () => {
             const { roles, sampleAccount, sampleAccountDoc } = mock({});

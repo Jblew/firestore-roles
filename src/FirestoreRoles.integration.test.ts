@@ -218,6 +218,17 @@ describe("FirestoreRoles", () => {
     });
 
     describe("removeFromRequestedRoles", () => {
-        it.skip("Removes only specified roles from requested roles");
+        it("Removes only specified roles from requested roles", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const reqRoles: string[] = ["manager", "admin", "editor"];
+            await roles.requestRoles(sampleAccount.uid, reqRoles);
+            await roles.removeFromRequestedRoles(sampleAccount.uid, ["manager", "admin"]);
+
+            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .that.has.members(["editor"]);
+        });
     });
 });

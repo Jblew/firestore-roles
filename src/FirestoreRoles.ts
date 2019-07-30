@@ -108,7 +108,7 @@ export class FirestoreRoles {
             requestedRoles,
         };
         RequestedRolesHolder.validate(fieldsToUpdate, this.config);
-        await this.getUserDoc(uid).set(fieldsToUpdate);
+        await this.getUserDoc(uid).update(fieldsToUpdate);
     }
 
     private async saveRoles(uid: string, roles: string[]) {
@@ -116,7 +116,7 @@ export class FirestoreRoles {
             roles,
         };
         RolesHolder.validate(fieldsToUpdate, this.config);
-        await this.getUserDoc(uid).set(fieldsToUpdate);
+        await this.getUserDoc(uid).update(fieldsToUpdate);
     }
 
     private getUserDoc(uid: string): FirestoreEquivalent.DocumentReferenceEquivalent {

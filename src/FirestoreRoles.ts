@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import ow from "ow";
 
 import { Configuration } from "./Configuration";
-import { FirestoreRolesError } from "./FirestoreRolesError";
+import { FirestoreRolesAccountDoesntExistError } from "./error/FirestoreRolesAccountDoesntExistError";
 import { AccountRecord } from "./model/AccountRecord";
 import { RequestedRolesHolder } from "./model/RequestedRolesHolder";
 import { RolesHolder } from "./model/RolesHolder";
@@ -92,7 +92,7 @@ export class FirestoreRoles {
 
     private async getAccountRecord(uid: string): Promise<AccountRecord> {
         const arSnapshot = await this.getUserDoc(uid).get();
-        if (!arSnapshot.exists) throw new FirestoreRolesError("User does not exist");
+        if (!arSnapshot.exists) throw new FirestoreRolesAccountDoesntExistError("Account doesnt exist");
         const ar = arSnapshot.data() as AccountRecord;
         AccountRecord.validate(ar, this.config);
         return ar;

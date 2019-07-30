@@ -4,12 +4,17 @@ import ow from "ow";
 
 import { ow_catch } from "./util";
 
-export interface Configuration {
+export interface Configuration extends Configuration.Optional {
     accountsCollection: string;
     roles: { [k: string]: Configuration.Role };
 }
 
 export namespace Configuration {
+    export interface Optional {
+        accountsCollection?: string;
+        roles?: { [k: string]: Configuration.Role };
+    }
+
     export function validate(c: Configuration) {
         ow(c.accountsCollection, "Configuration.accountsCollection", ow.string.nonEmpty);
 

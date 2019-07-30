@@ -147,9 +147,36 @@ describe("FirestoreRoles", () => {
     });
 
     describe("getRequestedRoles", () => {
-        it.skip("Fails if account doesnt exist");
-        it.skip("Returns empty array if account never had roles set up");
-        it.skip("Returns previously set roles");
+        it("Fails if account doesnt exist", async () => {
+            it("Fails if account doesnt exist", async () => {
+                const { roles } = mock(config);
+
+                await expect(roles.getRequestedRoles("nonexistent-uid"))
+                    .to.eventually.be.rejectedWith("Account doesnt exist")
+                    .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
+            });
+        });
+
+        it("Returns empty array if account never had requested roles set up", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+
+            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .with.length(0);
+        });
+
+        it("Returns previously set requested roles", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const reqRoles: string[] = ["manager", "admin"];
+            await roles.requestRoles(sampleAccount.uid, reqRoles);
+            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .that.has.members(reqRoles);
+        });
     });
 
     describe("requestRoles", () => {

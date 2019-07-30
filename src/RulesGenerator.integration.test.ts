@@ -5,7 +5,8 @@ import * as _ from "lodash";
 import "mocha";
 
 import { Configuration } from "./Configuration";
-import { cleanupEach, mock } from "./RulesGenerator.mock.integration.test";
+import { cleanupEach, mock, d } from "./RulesGenerator.mock.integration.test";
+import * as uuid from "uuid";
 
 chaiUse(chaiAsPromised);
 
@@ -28,55 +29,126 @@ describe.only("RulesGenerator", function() {
         const col = config.accountsCollection;
         describe("Not authenticated user", () => {
             it("Cannot create in accounts collection", async () => {
-                const { userFirestore } = await mock({ uid: undefined, config, customRules: "" });
+                const { userFirestore } = await mock({ uid: undefined, config });
 
                 await assert.isRejected(userFirestore.collection(col).add({ da: "ta" }), /PERMISSION_DENIED/);
                 await assert.isRejected(userFirestore.collection(col).add({ roles: ["ta"] }), /PERMISSION_DENIED/);
             });
 
             it("Cannot get from accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config, customRules: "" });
+                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
                 await adminDoc(col, "a").set({ da: "ta" });
 
-                await assert.isRejected(userDoc(col, "a").get(), /false for/);
+                await assert.isRejected(userDoc(col, "a").get(), /false for 'get'/);
             });
 
             it("Cannot set to accounts collection", async () => {
-                const { userDoc } = await mock({ uid: undefined, config, customRules: "" });
+                const { userDoc } = await mock({ uid: undefined, config });
 
                 await assert.isRejected(userDoc(col, "a").set({ da: "ta" }), /PERMISSION_DENIED/);
             });
 
             it("Cannot update in accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config, customRules: "" });
+                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
                 await adminDoc(col, "a").set({ da: "ta" });
 
                 await assert.isRejected(userDoc(col, "a").update({ ano: "ther" }), /PERMISSION_DENIED/);
             });
 
             it("Cannot delete in accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config, customRules: "" });
+                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
                 await adminDoc(col, "a").set({ da: "ta" });
 
                 await assert.isRejected(userDoc(col, "a").delete(), /PERMISSION_DENIED/);
             });
 
-            it.skip("Cannot list from accounts collection");
+            it("Cannot list from accounts collection", async () => {
+                const { userFirestore } = await mock({ uid: undefined, config });
+
+                await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+            });
         });
 
         describe("Authenticated, not manager", () => {
-            it.skip("Can create account with own uid");
-            it.skip("Can create account with own uid with empty roles field");
-            it.skip("Cannot create account with own uid with not empty roles field");
-            it.skip("Cannot create account with not own uid");
-            it.skip("Can read account with own uid");
-            it.skip("Cannot read account with not own uid");
-            it.skip("Cannot list");
-            it.skip("Can request a role");
-            it.skip("Can remove role from requested roles");
+            it("Can create account with own uid", async () => {
+                const { userDoc, uid } = await mock({ uid: uuid(), config });
+
+                await assert.isFulfilled(userDoc(col, d(uid)).set({ da: "ta", some: "opts" }, {}));
+            });
+
+            it("Cannot create account with own uid with not empty roles field", async () => {
+                const { userDoc, uid } = await mock({ uid: uuid(), config });
+
+                await assert.isRejected(userDoc(col, d(uid)).set({ da: "ta", roles: ["admin"] }), /PERMISSION_DENIED/);
+            });
+
+            it("Cannot create account with not own uid", async () => {
+                const { userDoc } = await mock({ uid: uuid(), config });
+
+                await assert.isRejected(userDoc(col, "foreign-uid").set({ da: "ta" }), /PERMISSION_DENIED/);
+            });
+
+            it("Can read account with own uid", async () => {
+                const { userDoc, adminDoc, uid } = await mock({ uid: uuid(), config });
+                await adminDoc(col, d(uid)).set({ da: "ta" });
+
+                await assert.isFulfilled(userDoc(col, d(uid)).get());
+            });
+
+            it("Cannot read account with not own uid", async () => {
+                const { userDoc, adminDoc } = await mock({ uid: uuid(), config });
+                const foreignUid = "foreign-uid";
+                await adminDoc(col, "foreign-uid").set({ da: "ta" });
+
+                await assert.isRejected(userDoc(col, "foreign-uid").get(), /false for 'get'/);
+            });
+
+            it("Cannot list", async () => {
+                const { userFirestore } = await mock({ uid: uuid(), config });
+
+                await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+            });
+
+            async function setRequestedRoles() {}
+
+            it("Can request a role for own uid", async () => {
+                const { userDoc, createAccount, uid } = await mock({ uid: uuid(), config });
+                const account = await createAccount(d(uid));
+                await assert.isFulfilled(userDoc(col, d(uid)).update({ requestedRoles: ["newrole"] }));
+            });
+
+            it("Cannot request a role for foreigh uid", async () => {
+                const { userDoc, createAccount, uid } = await mock({ uid: undefined, config });
+                const account = await createAccount("foreignuid");
+                await assert.isRejected(
+                    userDoc(col, d(uid)).update({ requestedRoles: ["newrole"] }),
+                    /false for 'update'/,
+                );
+            });
+
+            it("Can remove own role from requested roles", async () => {
+                const { userDoc, adminDoc, createAccount, uid } = await mock({
+                    uid: undefined,
+                    config,
+                });
+                const account = await createAccount("foreignuid");
+                await adminDoc(col, d(uid)).update({ requestedRoles: [] });
+                await assert.isRejected(
+                    userDoc(col, d(uid)).update({ requestedRoles: ["newrole"] }),
+                    /false for 'update'/,
+                );
+            });
+
+            it("Cannot remove foreign role from requested roles", async () => {});
+
             it.skip("Cannot set roles field");
+
             it.skip("Cannot delete a role");
+
             it.skip("Cannot update roles field");
+
+            it.skip("Cannot empty roles field");
+
             it.skip("Cannot update other fields");
         });
 
@@ -92,10 +164,12 @@ describe.only("RulesGenerator", function() {
             it.skip("Cannot add role that he doesnt manage");
             it.skip("Can remove role that he manages");
             it.skip("Cannot remove role that he doesnt manage");
+            it.skip("Cannot empty roles field when there are roles that he doesnt manage");
             it.skip("Can add requestedRoles that he manages");
             it.skip("Cannot add requestedRoles that he doesnt manage");
             it.skip("Can remove requestedRoles that he manages");
             it.skip("Cannot remove requestedRoles that he doesnt manage");
+            it.skip("Cannot empty roles field when there are requestedRoles that he doesnt manage");
             it.skip("Cannot update or set other fields in users with roles that he manages");
             it.skip("Cannot update or set other fields in users with roles that he doesnt manage");
         });

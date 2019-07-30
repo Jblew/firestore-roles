@@ -7,8 +7,9 @@ import * as uuid from "uuid/v4";
 import { Configuration } from "./Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
 import { RulesGenerator } from "./RulesGenerator";
+import { AccountRecord } from "./model/AccountRecord";
 
-export async function mock(props: { uid: string | undefined; config: Configuration; customRules: string }) {
+export async function mock(props: { uid: string | undefined; config: Configuration; customRules?: string }) {
     const projectId = `unit-testing-${uuid()}`;
     const app = firebase.initializeTestApp({
         projectId,
@@ -19,7 +20,7 @@ export async function mock(props: { uid: string | undefined; config: Configurati
     const adminApp = firebase.initializeAdminApp({ projectId });
     const adminFirestore = adminApp.firestore();
 
-    const rules = RulesGenerator.generateRules(props.config, props.customRules);
+    const rules = RulesGenerator.generateRules(props.config, props.customRules || "");
     await firebase.loadFirestoreRules({ projectId, rules });
 
     const userRoles = new FirestoreRoles(props.config, userFirestore);
@@ -32,6 +33,12 @@ export async function mock(props: { uid: string | undefined; config: Configurati
         return adminFirestore.collection(col).doc(doc);
     }
 
+    async function createAccount(uid: string): Promise<AccountRecord> {
+        const ar = getSampleAccountRecord(uid);
+        await adminDoc(props.config.accountsCollection, uid).set(ar);
+        return ar;
+    }
+
     return {
         app,
         adminApp,
@@ -42,6 +49,21 @@ export async function mock(props: { uid: string | undefined; config: Configurati
         adminRoles,
         userDoc,
         adminDoc,
+        createAccount,
+        ...props,
+    };
+}
+
+export function getSampleAccountRecord(uid: string): AccountRecord {
+    return {
+        uid,
+        displayName: `sample-account-${uid}`,
+        email: `${uid}@sample.sample`,
+        providerId: "google",
+        photoURL: null,
+        phoneNumber: null,
+        roles: [],
+        requestedRoles: [],
     };
 }
 
@@ -51,4 +73,9 @@ export async function cleanupEach() {
     } catch (error) {
         console.warn("Warning: Error in firebase shutdown " + error);
     }
+}
+
+export function d<T>(v: T | undefined): T {
+    if (typeof v === "undefined") throw new Error("Undefined parameter of d() method");
+    return v;
 }

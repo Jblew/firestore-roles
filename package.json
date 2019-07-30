@@ -30,7 +30,7 @@
     "firebase": "^6.3.3",
     "lodash": "^4.17.15",
     "ow": "^0.13.2",
-    "typescript-chained-error": "^1.3.1"
+    "typescript-chained-error": "^1.3.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
@@ -50,7 +50,7 @@
     "husky": "^3.0.2",
     "jblew-tslint-config": "^0.1.0",
     "mocha": "^6.2.0",
-    "semantic-release": "^15.13.18",
+    "semantic-release": "^15.13.19",
     "sinon": "7.3.2",
     "ts-node": "8.3.0",
     "tslint": "5.18.0",

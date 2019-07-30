@@ -1,22 +1,61 @@
 // tslint:disable max-classes-per-file no-console
-import { use as chaiUse } from "chai";
+import { expect, use as chaiUse } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as _ from "lodash";
 import "mocha";
 
 import { Configuration } from "./Configuration";
-import { cleanupEach, startupAll } from "./FirestoreRoles.mock.integration.test";
+import { cleanupEach, getAccountRecord, mock, startupAll } from "./FirestoreRoles.mock.integration.test";
+import { AccountRecord } from "./model/AccountRecord";
+import { FirebaseAccount } from "./types/FirebaseAccount";
+import { FirestoreRoles } from "./FirestoreRoles";
 
 chaiUse(chaiAsPromised);
 
-before("startup", startupAll);
+before("startup", function() {
+    this.timeout(4000);
+    startupAll();
+});
 afterEach(cleanupEach);
+
+const config: Configuration.Optional = {
+    roles: {
+        admin: { manages: ["manager", "editor", "reviewer"] },
+        manager: { manages: ["editor", "reviewer"] },
+        editor: { manages: [] },
+        reviewer: { manages: [] },
+    },
+};
 
 describe("FirestoreRoles", () => {
     describe("registerUser", () => {
-        it.skip("Adds user to database");
-        it.skip("Adds user with roles defined as empty array");
-        it.skip("Adds user with requested roles defined as empty array");
+        it("Adds user to database", async () => {
+            const { roles, sampleAccount, sampleAccountDoc } = mock({});
+            await roles.registerUser(sampleAccount);
+
+            const obtainedUser = await getAccountRecord(sampleAccountDoc);
+            expect(obtainedUser.uid).to.be.equal(sampleAccount.uid);
+        });
+
+        it("Adds user with roles defined as empty array", async () => {
+            const { roles, sampleAccount, sampleAccountDoc } = mock({});
+            await roles.registerUser(sampleAccount);
+
+            const obtainedAR = await getAccountRecord(sampleAccountDoc);
+            expect(obtainedAR.roles)
+                .to.be.an("array")
+                .with.length(0);
+        });
+
+        it("Adds user with requested roles defined as empty array", async () => {
+            const { roles, sampleAccount, sampleAccountDoc } = mock({});
+            await roles.registerUser(sampleAccount);
+
+            const obtainedAR = await getAccountRecord(sampleAccountDoc);
+            expect(obtainedAR.requestedRoles)
+                .to.be.an("array")
+                .with.length(0);
+        });
     });
 
     describe("setRoles", () => {

@@ -3,11 +3,12 @@ import * as _ from "lodash";
 import { Configuration } from "./Configuration";
 
 export namespace RulesGenerator {
-    export function generateRules(config: Configuration): string {
+    export function generateRules(config: Configuration, customRules: string = DEFAULT_CUSTOM_RULES): string {
         Configuration.validate(config);
         return fromTemplate({
             accountsCollection: config.accountsCollection,
             roleManagementStatements: constructRoleManagementStatements(config),
+            customRules,
         });
     }
 
@@ -22,7 +23,11 @@ export namespace RulesGenerator {
         return statements.join(`\n`);
     }
 
-    function fromTemplate(props: { accountsCollection: string; roleManagementStatements: string }) {
+    function fromTemplate(props: {
+        accountsCollection: string;
+        roleManagementStatements: string;
+        customRules: string;
+    }) {
         return `
 rules_version = '2';
 
@@ -31,19 +36,16 @@ service cloud.firestore {
     ${METHODS}
 
     match /${props.accountsCollection}/{uid} {
-        allow read if: accountBelongsToCaller(uid);
-        allow create if: allowCreateAccountWithEmptyRoles(uid);
-        allow update, delete, read if:
+        allow read: if accountBelongsToCaller(uid);
+        allow create: if allowCreateAccountWithEmptyRoles(uid);
+        allow update, delete, read: if (
                 (accountBelongsToCaller(uid) && disallowSelfRolesManagement())
-                ${props.roleManagementStatements}
-        ;
+${props.roleManagementStatements}
+        );
     }
 
-    ... your rules here, eg.:
-    match /posts/{post} {
-        allow read: if true;
-        allow write: if isAuthenticated() && hasRoles(["author"]);
-    }
+    ${props.customRules}
+  }
 }
     `;
     }
@@ -66,7 +68,7 @@ service cloud.firestore {
     }
 
     function disallowModifyingAccountExceptRoles() {
-        return !(resource.data.keys().length === 1 && ("roles" in resource.data.keys()));
+        return !(resource.data.keys().length == 1 && ("roles" in resource.data.keys()));
     }
 
     function allowRoleManagementOnly(manager, roles) {
@@ -81,4 +83,12 @@ service cloud.firestore {
         return accountBelongsToCaller(uid) && ("roles" in resource.data.keys()) && resource.data.roles.length == 0;
     }
     `);
+
+    const DEFAULT_CUSTOM_RULES = `
+        ... your rules here, eg.:
+        match /posts/{post} {
+            allow read: if true;
+            allow write: if isAuthenticated() && hasRoles(["author"]);
+        }
+    `;
 }

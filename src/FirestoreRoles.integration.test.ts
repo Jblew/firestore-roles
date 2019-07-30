@@ -7,7 +7,6 @@ import "mocha";
 import { Configuration } from "./Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
 import { cleanupEach, getAccountRecord, mock, startupAll } from "./FirestoreRoles.mock.integration.test";
-import { AccountRecord } from "./model/AccountRecord";
 import { FirebaseAccount } from "./types/FirebaseAccount";
 
 chaiUse(chaiAsPromised);

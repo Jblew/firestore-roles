@@ -23,10 +23,10 @@ export namespace AccountRecord {
     export function validate(ar: AccountRecord, config: Configuration) {
         ow(ar.uid, "AccountRecord.uid", ow.string.nonEmpty);
         ow(ar.providerId, "AccountRecord.providerId", ow.string.nonEmpty);
-        ow(ar.displayName, "AccountRecord.displayName", ow.optional.string.nonEmpty);
-        ow(ar.email, "AccountRecord.email", ow.optional.string.nonEmpty);
-        ow(ar.phoneNumber, "AccountRecord.phoneNumber", ow.optional.string.nonEmpty);
-        ow(ar.providerId, "AccountRecord.providerId", ow.optional.string.nonEmpty);
+        ow(ar.displayName, "AccountRecord.displayName", ow.any(ow.null, ow.string.nonEmpty));
+        ow(ar.email, "AccountRecord.email", ow.any(ow.null, ow.string.nonEmpty));
+        ow(ar.phoneNumber, "AccountRecord.phoneNumber", ow.any(ow.null, ow.string.nonEmpty));
+        ow(ar.providerId, "AccountRecord.providerId", ow.any(ow.null, ow.string.nonEmpty));
         RolesHolder.validate(ar, config);
         RequestedRolesHolder.validate(ar, config);
 

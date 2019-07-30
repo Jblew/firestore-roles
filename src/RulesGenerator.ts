@@ -68,11 +68,12 @@ ${props.roleManagementStatements}
     }
 
     function disallowModifyingAccountExceptRoles() {
-        return !(resource.data.keys().length == 1 && ("roles" in resource.data.keys()));
+        return !(resource.data.keys().length == 1 && ("roles" in request.resource.data.keys()));
     }
 
     function allowRoleManagementOnly(manager, roles) {
-        return hasRoles([manager]) && disallowModifyingAccountExceptRoles() && roles.hasAll(resource.data.roles);
+        return hasRoles([manager]) && disallowModifyingAccountExceptRoles()
+             && roles.hasAll(request.resource.data.roles);
     }
 
     function disallowSelfRolesManagement() {
@@ -80,7 +81,7 @@ ${props.roleManagementStatements}
     }
 
     function allowCreateAccountWithEmptyRoles(uid) {
-        return accountBelongsToCaller(uid) && ("roles" in resource.data.keys()) && resource.data.roles.length == 0;
+        return accountBelongsToCaller(uid) && (!("roles" in request.resource.data.keys()));
     }
     `);
 

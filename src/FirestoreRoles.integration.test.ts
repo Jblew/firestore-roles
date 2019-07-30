@@ -126,8 +126,24 @@ describe("FirestoreRoles", () => {
     });
 
     describe("hasRoles", () => {
-        it.skip("Returns true if user has a role");
-        it.skip("Returns false if user does not have a role");
+        async function setRoles(
+            rolesToSet: string[],
+        ): Promise<{ sampleAccount: FirebaseAccount; roles: FirestoreRoles }> {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            await roles.setRoles(sampleAccount.uid, rolesToSet);
+            return { sampleAccount, roles };
+        }
+
+        it("Returns true if user has a role", async () => {
+            const { sampleAccount, roles } = await setRoles(["admin"]);
+            await expect(roles.hasRole(sampleAccount.uid, "admin")).to.eventually.be.true;
+        });
+
+        it("Returns false if user does not have a role", async () => {
+            const { sampleAccount, roles } = await setRoles(["admin"]);
+            await expect(roles.hasRole(sampleAccount.uid, "manager")).to.eventually.be.false;
+        });
     });
 
     describe("getRequestedRoles", () => {

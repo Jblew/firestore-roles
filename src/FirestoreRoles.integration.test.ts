@@ -59,8 +59,39 @@ describe("FirestoreRoles", () => {
     });
 
     describe("setRoles", () => {
-        it.skip("Sets roles of account");
-        it.skip("Does not modify other properties of an account");
+        it("Sets roles of account", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const setRoles: string[] = ["manager", "editor"];
+            await roles.setRoles(sampleAccount.uid, setRoles);
+            const gotRoles = await roles.getRoles(sampleAccount.uid);
+            expect(gotRoles)
+                .to.be.an("array")
+                .that.has.members(setRoles);
+        });
+
+        it("Fails to set not defined role", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+            const setRoles = ["nonexistent-role"];
+            await expect(roles.setRoles(sampleAccount.uid, setRoles)).to.eventually.be.rejectedWith(
+                "Expected string `e` `nonexistent-role`",
+            );
+        });
+
+        it("Does not modify other properties of an account", async () => {
+            const { roles, sampleAccount, sampleAccountDoc } = mock(config);
+            sampleAccount.displayName = "fancyDisplayName";
+            sampleAccount.phoneNumber = "123654345";
+            await roles.registerUser(sampleAccount);
+
+            const setRoles = ["manager", "editor"];
+            await roles.setRoles(sampleAccount.uid, setRoles);
+
+            const gotAccount = await getAccountRecord(sampleAccountDoc);
+            expect(gotAccount.displayName).to.be.equal(sampleAccount.displayName);
+            expect(gotAccount.phoneNumber).to.be.equal(sampleAccount.phoneNumber);
+        });
     });
 
     describe("getRoles", () => {

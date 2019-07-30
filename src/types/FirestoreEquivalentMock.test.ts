@@ -37,6 +37,14 @@ export namespace FirestoreEquivalentMock {
             this.data = newData;
             this.exists = true;
         }
+
+        public async update(newData: object): Promise<any> {
+            this.data = {
+                ...this.data,
+                newData,
+            };
+            this.exists = true;
+        }
     }
 
     export interface DocumentSnapshot {

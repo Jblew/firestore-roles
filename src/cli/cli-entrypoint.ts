@@ -1,6 +1,5 @@
-// tslint:disable no-console
-import { parseCli } from "./cli";
+#!/usr/bin/env node
 
-console.log(process.argv);
+import { parseCli } from "./cli";
 
 parseCli();

@@ -1,2 +1,2 @@
 
-firebase-roles generate config.js inner.rules firestore-deploy.rules
+firestore-roles generate config.js inner.rules firestore-deploy.rules

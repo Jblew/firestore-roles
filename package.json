@@ -4,7 +4,9 @@
   "description": "Role management system for Firestore",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": "dist/cli/cli-entrypoint.js",
+  "bin": {
+    "firestore-rules": "dist/cli/cli-entrypoint.js"
+  },
   "browser": {
     "path": false,
     "fs": false,

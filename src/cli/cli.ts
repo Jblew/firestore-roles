@@ -55,7 +55,7 @@ async function processGenerateCmd(args: string[]) {
 
     let outputFile: string | undefined;
     const [configFileUnresolved, rulesFileUnresolved] = args;
-    if (args.length === 3) outputFile = resolveFile(args[3]);
+    if (args.length === 3) outputFile = resolveFile(args[2]);
 
     const configFile = resolveFile(path.resolve(configFileUnresolved));
     const rulesFile = resolveFile(path.resolve(rulesFileUnresolved));
@@ -66,6 +66,8 @@ async function processGenerateCmd(args: string[]) {
     const config = require(configFile);
     const rules = fs.readFileSync(rulesFile, "UTF-8");
     const { output, message } = await execGenerateCmd(config, rules);
+    console.log(message);
+    console.log();
 
     if (outputFile) {
         fs.writeFileSync(outputFile, output, "UTF-8");

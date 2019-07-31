@@ -1,5 +1,5 @@
 // tslint:disable max-classes-per-file no-console
-import { assert, expect, use as chaiUse } from "chai";
+import { expect, use as chaiUse } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as _ from "lodash";
 import "mocha";
@@ -71,8 +71,8 @@ describe("FirestoreRoles", function() {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
 
-            await expect(await roles.enableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
-                "Expected string `e` `nonexistent-role`",
+            await expect(roles.enableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
+                "Role 'nonexistent-role' is not defined",
             );
         });
     });
@@ -93,8 +93,8 @@ describe("FirestoreRoles", function() {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
 
-            await expect(await roles.disableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
-                "Expected string `e` `nonexistent-role`",
+            await expect(roles.disableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
+                "Role 'nonexistent-role' is not defined",
             );
         });
     });

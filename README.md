@@ -1,5 +1,5 @@
 # Firestore user roles management
-[![npm](https://img.shields.io/npm/v/firebase-functions-rate-limiter.svg?style=flat-square)](https://www.npmjs.com/package/firebase-functions-rate-limiter)  [![build](https://travis-ci.com/Jblew/firebase-functions-rate-limiter.svg?branch=master)](https://travis-ci.com/Jblew/firebase-functions-rate-limiter) [![License](https://img.shields.io/github/license/Jblew/firebase-functions-rate-limiter.svg?style=flat-square)](https://github.com/Jblew/firebase-functions-rate-limiter/blob/master/LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![npm](https://img.shields.io/npm/v/firestore-roles.svg?style=flat-square)](https://www.npmjs.com/package/firestore-roles)  [![build](https://travis-ci.com/Jblew/firestore-roles.svg?branch=master)](https://travis-ci.com/Jblew/firestore-roles) [![codecov](https://codecov.io/gh/Jblew/firestore-roles/branch/master/graph/badge.svg)](https://codecov.io/gh/Jblew/firestore-roles) [![License](https://img.shields.io/github/license/Jblew/firestore-roles.svg?style=flat-square)](https://github.com/Jblew/firestore-roles/blob/master/LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 
 ## Installation

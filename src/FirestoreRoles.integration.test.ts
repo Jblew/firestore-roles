@@ -1,5 +1,5 @@
 // tslint:disable max-classes-per-file no-console
-import { expect, use as chaiUse } from "chai";
+import { assert, expect, use as chaiUse } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as _ from "lodash";
 import "mocha";
@@ -43,9 +43,8 @@ describe("FirestoreRoles", function() {
             await roles.registerUser(sampleAccount);
 
             const obtainedAR = await getAccountRecord(sampleAccountDoc);
-            expect(obtainedAR.roles)
-                .to.be.an("array")
-                .with.length(0);
+            expect(obtainedAR.uid).to.be.equal(sampleAccount.uid);
+            expect(obtainedAR.displayName).to.be.equal(sampleAccount.displayName);
         });
 
         it("Adds user with requested roles defined as empty array", async () => {
@@ -59,91 +58,58 @@ describe("FirestoreRoles", function() {
         });
     });
 
-    describe("setRoles", () => {
-        it("Sets roles of account", async () => {
+    describe("enableRole", () => {
+        it("Enables role of account", async () => {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
-            const setRoles: string[] = ["manager", "editor"];
-            await roles.setRoles(sampleAccount.uid, setRoles);
-            const gotRoles = await roles.getRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .that.has.members(setRoles);
+
+            await roles.enableRole(sampleAccount.uid, "editor");
+            await expect(roles.hasRole(sampleAccount.uid, "editor")).to.eventually.be.fulfilled.eq(true);
         });
 
         it("Fails to set not defined role", async () => {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
-            const setRoles = ["nonexistent-role"];
-            await expect(roles.setRoles(sampleAccount.uid, setRoles)).to.eventually.be.rejectedWith(
+
+            await expect(await roles.enableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
                 "Expected string `e` `nonexistent-role`",
             );
         });
+    });
 
-        it("Does not modify other properties of an account", async () => {
-            const { roles, sampleAccount, sampleAccountDoc } = mock(config);
-            sampleAccount.displayName = "fancyDisplayName";
-            sampleAccount.phoneNumber = "123654345";
+    describe("disableRole", () => {
+        it("Disables role of account", async () => {
+            const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
 
-            const setRoles = ["manager", "editor"];
-            await roles.setRoles(sampleAccount.uid, setRoles);
+            await roles.enableRole(sampleAccount.uid, "editor");
+            await expect(roles.hasRole(sampleAccount.uid, "editor")).to.eventually.be.fulfilled.eq(true);
 
-            const gotAccount = await getAccountRecord(sampleAccountDoc);
-            expect(gotAccount.displayName).to.be.equal(sampleAccount.displayName);
-            expect(gotAccount.phoneNumber).to.be.equal(sampleAccount.phoneNumber);
+            await roles.disableRole(sampleAccount.uid, "editor");
+            await expect(roles.hasRole(sampleAccount.uid, "editor")).to.eventually.be.fulfilled.eq(false);
+        });
+
+        it("Fails to disable not defined role", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+
+            await expect(await roles.disableRole(sampleAccount.uid, "nonexistent-role")).to.eventually.be.rejectedWith(
+                "Expected string `e` `nonexistent-role`",
+            );
         });
     });
 
-    describe("getRoles", () => {
-        it("Fails if account doesnt exist", async () => {
-            const { roles } = mock(config);
-
-            await expect(roles.getRoles("nonexistent-uid"))
-                .to.eventually.be.rejectedWith("Account doesnt exist")
-                .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
-        });
-
-        it("Returns empty array if account never had roles set up", async () => {
+    describe("hasRole", () => {
+        it("Returns true if account has the role", async () => {
             const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-
-            const gotRoles = await roles.getRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .with.length(0);
+            await roles.enableRole(sampleAccount.uid, "editor");
+            await expect(roles.hasRole(sampleAccount.uid, "editor")).to.eventually.be.fulfilled.eq(true);
         });
 
-        it("Returns previously set roles", async () => {
+        it("Returns true if account doesnt have the role", async () => {
             const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-            const setRoles: string[] = ["manager", "admin"];
-            await roles.setRoles(sampleAccount.uid, setRoles);
-            const gotRoles = await roles.getRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .that.has.members(setRoles);
-        });
-    });
-
-    describe("hasRoles", () => {
-        async function setRoles(
-            rolesToSet: string[],
-        ): Promise<{ sampleAccount: FirebaseAccount; roles: FirestoreRoles }> {
-            const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-            await roles.setRoles(sampleAccount.uid, rolesToSet);
-            return { sampleAccount, roles };
-        }
-
-        it("Returns true if user has a role", async () => {
-            const { sampleAccount, roles } = await setRoles(["admin"]);
-            await expect(roles.hasRole(sampleAccount.uid, "admin")).to.eventually.be.true;
-        });
-
-        it("Returns false if user does not have a role", async () => {
-            const { sampleAccount, roles } = await setRoles(["admin"]);
-            await expect(roles.hasRole(sampleAccount.uid, "manager")).to.eventually.be.false;
+            await roles.enableRole(sampleAccount.uid, "manager");
+            await expect(roles.hasRole(sampleAccount.uid, "editor")).to.eventually.be.fulfilled.eq(false);
         });
     });
 

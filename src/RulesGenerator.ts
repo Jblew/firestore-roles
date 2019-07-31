@@ -81,7 +81,7 @@ service cloud.firestore {
     ${this.getMethods()}
 
     match /${this.config.accountsCollection}/{uid} {
-        allow create: if allowAccountCreateWithNonFakeParams();
+        allow create: if allowAccountCreateWithNonFakeParams(uid);
         allow read: if accountBelongsToCaller(uid);
         allow read: if isAuthenticated() && ( false
             // manager of a role can read data of users who belong to the role
@@ -118,10 +118,12 @@ service cloud.firestore {
         return userHasRole(role, request.auth.uid);
     }
 
-    function allowAccountCreateWithNonFakeParams() {
+    function allowAccountCreateWithNonFakeParams(uid) {
         return isAuthenticated()
+             && request.auth.uid == uid
              && request.auth.token.email == request.resource.data.email
-             && request.auth.token.name == request.resource.data.name
+             && request.auth.token.name == request.resource.data.displayName
+            ;
     }
     `);
     }

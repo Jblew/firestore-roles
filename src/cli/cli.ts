@@ -1,5 +1,5 @@
-// tslint:disable no-console
 import * as fs from "fs";
+import ow from "ow";
 import * as path from "path";
 
 import { CliError } from "./CliError";
@@ -7,70 +7,97 @@ import { execGenerateCmd } from "./cmd-generate";
 import { getUsage } from "./usage";
 import { assertFileExists, resolveFile } from "./util";
 
-export function parseCli() {
-    if (process.argv.length < 4) {
-        return exitWithUsage();
+export class Cli {
+    private logger: Cli.Logger;
+    private argv: string[];
+
+    public constructor(logger: Cli.Logger, argv: string[]) {
+        Cli.Logger.validate(logger);
+        this.logger = logger;
+
+        ow(argv, ow.array.ofType(ow.string));
+        this.argv = argv;
     }
 
-    process.argv.shift();
-    process.argv.shift();
-
-    const command: string = process.argv.shift() as string;
-    wrapErrors(() => processCommand(command, process.argv as string[]));
-}
-
-function exitWithUsage() {
-    console.log(getUsage());
-    process.exit(1);
-}
-
-function wrapErrors(fn: () => Promise<void>) {
-    (async () => {
-        try {
-            await fn();
-        } catch (error) {
-            handleError(error);
+    public async parseCli(): Promise<number> {
+        if (this.argv.length < 4) {
+            return this.exitWithUsage();
         }
-    })();
-}
 
-function handleError(error: Error) {
-    if ((error as CliError).cliError) console.error(`Error: ${error.message}`);
-    else console.error(error);
-}
+        this.argv.shift();
+        this.argv.shift();
 
-async function processCommand(command: string, args: string[]) {
-    switch (command) {
-        case "generate":
-            await processGenerateCmd(args);
-            break;
+        const command: string = this.argv.shift() as string;
+        return await this.wrapErrors(() => this.processCommand(command, this.argv as string[]));
+    }
 
-        default:
-            return exitWithUsage();
+    private exitWithUsage(): number {
+        this.logger.log(getUsage());
+        return 1;
+    }
+
+    private async wrapErrors(fn: () => Promise<number>): Promise<number> {
+        try {
+            return await fn();
+        } catch (error) {
+            this.handleError(error);
+            return 1;
+        }
+    }
+
+    private handleError(error: Error) {
+        if ((error as CliError).cliError) this.logger.error(`Error: ${error.message}`);
+        else this.logger.error(error + "" + error.stack);
+    }
+
+    private async processCommand(command: string, args: string[]): Promise<number> {
+        switch (command) {
+            case "generate":
+                return await this.processGenerateCmd(args);
+                break;
+
+            default:
+                return this.exitWithUsage();
+        }
+    }
+
+    private async processGenerateCmd(args: string[]): Promise<number> {
+        if (args.length < 2 || args.length > 3) return this.exitWithUsage();
+
+        let outputFile: string | undefined;
+        const [configFileUnresolved, rulesFileUnresolved] = args;
+        if (args.length === 3) outputFile = resolveFile(args[2]);
+
+        const configFile = resolveFile(path.resolve(configFileUnresolved));
+        const rulesFile = resolveFile(path.resolve(rulesFileUnresolved));
+
+        assertFileExists(configFile);
+        assertFileExists(rulesFile);
+
+        const config = require(configFile);
+        const rules = fs.readFileSync(rulesFile, "UTF-8");
+        const { output, message } = await execGenerateCmd(config, rules);
+        this.logger.log(message);
+        this.logger.log("");
+
+        if (outputFile) {
+            fs.writeFileSync(outputFile, output, "UTF-8");
+            this.logger.log(`Successfully written to file ${outputFile}`);
+        }
+        return 0;
     }
 }
 
-async function processGenerateCmd(args: string[]) {
-    if (args.length < 2 || args.length > 3) return exitWithUsage();
+export namespace Cli {
+    export interface Logger {
+        log: (msg: string) => void;
+        error: (msg: string) => void;
+    }
 
-    let outputFile: string | undefined;
-    const [configFileUnresolved, rulesFileUnresolved] = args;
-    if (args.length === 3) outputFile = resolveFile(args[2]);
-
-    const configFile = resolveFile(path.resolve(configFileUnresolved));
-    const rulesFile = resolveFile(path.resolve(rulesFileUnresolved));
-
-    assertFileExists(configFile);
-    assertFileExists(rulesFile);
-
-    const config = require(configFile);
-    const rules = fs.readFileSync(rulesFile, "UTF-8");
-    const { output, message } = await execGenerateCmd(config, rules);
-    console.log(message);
-    console.log();
-
-    if (outputFile) {
-        fs.writeFileSync(outputFile, output, "UTF-8");
-        console.log(`Successfully written to file ${outputFile}`);
+    export namespace Logger {
+        export function validate(l: Logger) {
+            ow(l.log, "Logger.log", ow.function);
+            ow(l.error, "Logger.error", ow.function);
+        }
     }
 }

@@ -1,5 +1,18 @@
 #!/usr/bin/env node
 
-import { parseCli } from "./cli";
+// tslint:disable no-console
 
-parseCli();
+import { Cli } from "./cli";
+
+const logger: Cli.Logger = {
+    log(msg: string) {
+        console.log(msg);
+    },
+    error(msg: string) {
+        console.error(msg);
+    },
+};
+
+(async () => {
+    new Cli(logger, process.argv).parseCli();
+})();

@@ -4,9 +4,8 @@ import { Configuration } from "../Configuration";
 import { FirebaseAccount } from "../types/FirebaseAccount";
 
 import { RequestedRolesHolder } from "./RequestedRolesHolder";
-import { RolesHolder } from "./RolesHolder";
 
-type ParentType = FirebaseAccount & RolesHolder & RequestedRolesHolder;
+type ParentType = FirebaseAccount & RequestedRolesHolder;
 export interface AccountRecord extends ParentType {
     displayName: string | null;
     email: string | null;
@@ -15,7 +14,6 @@ export interface AccountRecord extends ParentType {
     providerId: string;
     uid: string;
 
-    roles: string[];
     requestedRoles: string[];
 }
 
@@ -27,18 +25,10 @@ export namespace AccountRecord {
         ow(ar.email, "AccountRecord.email", ow.any(ow.null, ow.string.nonEmpty));
         ow(ar.phoneNumber, "AccountRecord.phoneNumber", ow.any(ow.null, ow.string.nonEmpty));
         ow(ar.providerId, "AccountRecord.providerId", ow.any(ow.null, ow.string.nonEmpty));
-        RolesHolder.validate(ar, config);
         RequestedRolesHolder.validate(ar, config);
-
-        ow(
-            ar.requestedRoles,
-            "AccountRecord.requestedRoles cannot already be in roles",
-            ow.array.ofType(ow.string.nonEmpty.not.oneOf(ar.roles)),
-        );
     }
 
     export const KEYS: { [x in keyof AccountRecord]: keyof AccountRecord } = Object.freeze({
-        ...RolesHolder.KEYS,
         ...RequestedRolesHolder.KEYS,
         displayName: "displayName",
         email: "email",

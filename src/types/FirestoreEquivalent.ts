@@ -16,5 +16,6 @@ export namespace FirestoreEquivalent {
         }>;
         set(record: object): Promise<any>;
         update(record: object): Promise<any>;
+        delete(): Promise<any>;
     }
 }

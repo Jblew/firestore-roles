@@ -4,8 +4,8 @@ import ow from "ow";
 import { Configuration } from "./Configuration";
 import { FirestoreRolesAccountDoesntExistError } from "./error/FirestoreRolesAccountDoesntExistError";
 import { AccountRecord } from "./model/AccountRecord";
+import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
 import { RequestedRolesHolder } from "./model/RequestedRolesHolder";
-import { RolesHolder } from "./model/RolesHolder";
 import { FirebaseAccount } from "./types/FirebaseAccount";
 import { FirestoreEquivalent } from "./types/FirestoreEquivalent";
 
@@ -20,20 +20,13 @@ export class FirestoreRoles {
         this.firestore = firestore;
     }
 
-    public async getRoles(uid: string): Promise<string[]> {
-        const aRec = await this.getAccountRecord(uid);
-        return aRec.roles;
-    }
-
     public async hasRole(uid: string, role: string): Promise<boolean> {
-        const roles = await this.getRoles(uid);
-        return roles.indexOf(role) >= 0;
+        return (await this.getRoleDoc(uid, role).get()).exists;
     }
 
     public async registerUser(user: FirebaseAccount) {
         const accountRecord: AccountRecord = {
             ...user,
-            roles: [],
             requestedRoles: [],
         };
 
@@ -56,15 +49,26 @@ export class FirestoreRoles {
         return aRec.requestedRoles;
     }
 
-    public async setRoles(uid: string, roles: string[]) {
-        ow(uid, "FirestoreRoles.setRoles(uid)", ow.string.nonEmpty);
+    public async enableRole(uid: string, role: string) {
+        ow(uid, "FirestoreRoles.enableRole(uid)", ow.string.nonEmpty);
         ow(
-            roles,
-            "FirestoreRoles.setRoles(roles)",
-            ow.array.ofType(ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v))),
+            role,
+            "FirestoreRoles.enableRole(role)",
+            ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v)),
         );
 
-        await this.saveRoles(uid, roles);
+        await this.getRoleDoc(uid, role).set(FirestoreRecordKeeper);
+    }
+
+    public async disableRole(uid: string, role: string) {
+        ow(uid, "FirestoreRoles.disableRole(uid)", ow.string.nonEmpty);
+        ow(
+            role,
+            "FirestoreRoles.disableRole(role)",
+            ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v)),
+        );
+
+        await this.getRoleDoc(uid, role).delete();
     }
 
     public async removeFromRequestedRoles(uid: string, rolesToRemove: string[]) {
@@ -111,15 +115,13 @@ export class FirestoreRoles {
         await this.getUserDoc(uid).update(fieldsToUpdate);
     }
 
-    private async saveRoles(uid: string, roles: string[]) {
-        const fieldsToUpdate: RolesHolder = {
-            roles,
-        };
-        RolesHolder.validate(fieldsToUpdate, this.config);
-        await this.getUserDoc(uid).update(fieldsToUpdate);
-    }
-
     private getUserDoc(uid: string): FirestoreEquivalent.DocumentReferenceEquivalent {
         return this.firestore.collection(this.config.accountsCollection).doc(uid);
+    }
+
+    private getRoleDoc(uid: string, role: string) {
+        ow(role, ow.string.is(v => Configuration.isAllowedRole(this.config, role) || `Role ${role} is not defined`));
+        const col = this.config.roleCollectionPrefix + role;
+        return this.firestore.collection(col).doc(uid);
     }
 }

@@ -25,17 +25,17 @@ export namespace FirestoreEquivalentMock {
 
     export class DocumentRef implements FirestoreEquivalentMock.DocumentRef {
         private data: any = undefined;
-        private exists: boolean = false;
+        private existsHolder: boolean = false;
         public async get(): Promise<DocumentSnapshot> {
             return {
-                exists: this.exists,
+                exists: this.existsHolder,
                 data: () => this.data,
             };
         }
 
         public async set(newData: object): Promise<any> {
             this.data = newData;
-            this.exists = true;
+            this.existsHolder = true;
         }
 
         public async update(newData: object): Promise<any> {
@@ -43,7 +43,12 @@ export namespace FirestoreEquivalentMock {
                 ...this.data,
                 newData,
             };
-            this.exists = true;
+            this.existsHolder = true;
+        }
+
+        public async delete(): Promise<any> {
+            this.existsHolder = false;
+            this.data = undefined;
         }
     }
 

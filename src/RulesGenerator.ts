@@ -38,7 +38,6 @@ export class RulesGenerator {
     private constructRoleManagementStatements() {
         const roleManagers = this.getManagersPerRole();
 
-        const indentation = "                ";
         const statements: string[] = [];
         for (const roleName of _.keys(this.config.roles)) {
             statements.push(this.constructSingleRoleStatement(roleName, roleManagers[roleName]));

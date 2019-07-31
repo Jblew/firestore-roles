@@ -15,8 +15,9 @@ export async function mock(props: {
     config: Configuration;
     customRules?: string;
     auth?: { email: string; name: string };
+    projectId?: string;
 }) {
-    const projectId = `unit-testing-${uuid()}`;
+    const projectId = props.projectId || `unit-testing-${uuid()}`;
     const auth = props.uid ? { ...(props.auth || {}), uid: props.uid } : undefined;
     const app = firebase.initializeTestApp({
         projectId,
@@ -40,9 +41,12 @@ export async function mock(props: {
         return adminFirestore.collection(col).doc(d(doc));
     }
 
-    async function createAccount(uidOrUndefined: string | undefined): Promise<AccountRecord> {
+    async function createAccount(
+        uidOrUndefined: string | undefined,
+        providedAccountRecord?: AccountRecord,
+    ): Promise<AccountRecord> {
         const uid = d(uidOrUndefined);
-        const ar = getSampleAccountRecord(uid);
+        const ar = providedAccountRecord || getSampleAccountRecord(uid);
         await adminDoc(props.config.accountsCollection, uid).set(ar);
         return ar;
     }

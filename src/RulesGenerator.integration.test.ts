@@ -6,6 +6,7 @@ import "mocha";
 import * as uuid from "uuid";
 
 import { Configuration } from "./Configuration";
+import { AccountRecord } from "./model/AccountRecord";
 import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
 import { cleanupEach, getSampleAccountRecord, mock } from "./RulesGenerator.mock.integration.test";
 
@@ -18,7 +19,7 @@ afterEach(cleanupEach);
  * raw firestore calls level instead of using FirestoreRoles class
  */
 
-describe.only("RulesGenerator", function() {
+describe("RulesGenerator", function() {
     this.timeout(3000);
 
     const config: Configuration = {
@@ -83,7 +84,6 @@ describe.only("RulesGenerator", function() {
 
                 it("Cannot list", async () => {
                     const { userFirestore } = await mock({ uid: undefined, config });
-
                     await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
                 });
 
@@ -188,7 +188,13 @@ describe.only("RulesGenerator", function() {
                     const { userFirestore, uid, createAccount } = await mock({ uid: uuid(), config });
                     await createAccount(uid);
 
-                    await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+                    await assert.isRejected(
+                        userFirestore
+                            .collection(col)
+                            .where("uid", "==", uid)
+                            .get(),
+                        /false for 'list'/,
+                    );
                 });
             });
 
@@ -241,33 +247,201 @@ describe.only("RulesGenerator", function() {
         });
 
         describe("Authenticated, manager", () => {
+            let projectId = "";
+            const manager = { role: "manager", account: getSampleAccountRecord(uuid()) };
+            const managedUser = { role: "editor", account: getSampleAccountRecord(uuid()) };
+            const notManagedUser = { role: "admin", account: getSampleAccountRecord(uuid()) };
+
+            this.beforeEach(async () => {
+                projectId = `firebase-project-${uuid()}`;
+                const { adminEnableRole, createAccount } = await mock({ uid: undefined, config, projectId });
+
+                async function createAccountWithRole(props: { account: AccountRecord; role: string }) {
+                    await createAccount(props.account.uid, props.account);
+                    await adminEnableRole(props.account.uid, props.role);
+                }
+
+                await createAccountWithRole(manager);
+                await createAccountWithRole(managedUser);
+                await createAccountWithRole(notManagedUser);
+            });
+
             describe("Accounts collection", () => {
-                it.skip("Can get data of account that has a role he manages");
-                it.skip("Cannot get data of account that doesn't have a role he manages");
-                it.skip("Can list accounts that have a role he manages");
-                it.skip("Cannot list accounts that doesn't have a role he manages");
-                it.skip("Cannot create account with not own uid");
-                it.skip("Cannot update an account");
-                it.skip("Cannot update own account");
-                it.skip("Cannot delete an account");
-                it.skip("Cannot delete own account");
+                const col = config.accountsCollection;
+
+                it("Can get data of account that has a role he manages", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+                    await assert.isFulfilled(userDoc(col, managedUser.account.uid).get());
+                });
+
+                it("Cannot get data of account that doesn't have a role he manages", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(userDoc(col, notManagedUser.account.uid).get(), /false for 'get'/);
+                });
+
+                it("Cannot list accounts", async () => {
+                    const { userFirestore } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(
+                        userFirestore
+                            .collection(col)
+                            .where("uid", "==", notManagedUser.account.uid)
+                            .get(),
+                        /false for 'list'/,
+                    );
+                });
+
+                it("Cannot create account with not own uid", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+                    const notOwnUid = `not-own-uid-${uuid()}`;
+
+                    await assert.isRejected(
+                        userDoc(col, notOwnUid).set(getSampleAccountRecord(notOwnUid)),
+                        /PERMISSION_DENIED/,
+                    );
+                });
+
+                it("Cannot update an account that he manages", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(
+                        userDoc(col, managedUser.account.uid).update({ email: "da@ta" }),
+                        /PERMISSION_DENIED/,
+                    );
+                });
+
+                it("Cannot update own account", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(
+                        userDoc(col, manager.account.uid).update({ email: "da@ta" }),
+                        /PERMISSION_DENIED/,
+                    );
+                });
+
+                it("Cannot delete an account that he manages", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(userDoc(col, managedUser.account.uid).delete(), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot delete own account", async () => {
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    await assert.isRejected(userDoc(col, manager.account.uid).delete(), /PERMISSION_DENIED/);
+                });
             });
 
             describe("Roles collection", () => {
-                it.skip("Can list in role he manages");
-                it.skip("Cannot list in role that he doesnt manage");
-                it.skip("Can create in role he manages");
-                it.skip("Cannot create in role that he doesnt manage");
-                it.skip("Cannot update in list that he manages");
-                it.skip("Cannot update in list that he doesn't manage");
-                it.skip("Can delete in list that he manages");
-                it.skip("Cannot delete in list that he doesn't manage");
+                it("Can list in role he manages", async () => {
+                    const role = managedUser.role;
+                    const { userFirestore } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isFulfilled(userFirestore.collection(col).get());
+                });
+
+                it("Cannot list in role that he doesnt manage", async () => {
+                    const role = notManagedUser.role;
+                    const { userFirestore } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+                });
+
+                it("Can create in role he manages", async () => {
+                    const role = managedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isFulfilled(userDoc(col, "doc").set(FirestoreRecordKeeper));
+                });
+
+                it("Cannot create in role that he doesnt manage", async () => {
+                    const role = notManagedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isRejected(userDoc(col, "doc").set(FirestoreRecordKeeper), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot update in list that he manages", async () => {
+                    const role = managedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isRejected(
+                        userDoc(col, managedUser.account.uid).update({ da: "ta" }),
+                        /PERMISSION_DENIED/,
+                    );
+                });
+
+                it("Cannot update in list that he doesn't manage", async () => {
+                    const role = notManagedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isRejected(
+                        userDoc(col, notManagedUser.account.uid).update({ da: "ta" }),
+                        /PERMISSION_DENIED/,
+                    );
+                });
+
+                it("Can delete in list that he manages", async () => {
+                    const role = managedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isFulfilled(userDoc(col, managedUser.account.uid).delete());
+                });
+
+                it("Cannot delete in list that he doesn't manage", async () => {
+                    const role = notManagedUser.role;
+                    const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
+
+                    const col = `${config.roleCollectionPrefix}${role}`;
+                    await assert.isRejected(userDoc(col, notManagedUser.account.uid).delete(), /PERMISSION_DENIED/);
+                });
             });
         });
     });
 
     describe("Guarded rules", () => {
-        it.skip("User without a required role cannot write to callerHasRole() guarded collection");
-        it.skip("User with a required role can write to callerHasRole() guarded collection");
+        let projectId = "";
+        const userWithRole = { role: "editor", account: getSampleAccountRecord(uuid()) };
+        const userWithoutRole = { role: "reviewer", account: getSampleAccountRecord(uuid()) };
+
+        this.beforeEach(async () => {
+            projectId = `firebase-project-${uuid()}`;
+            const { adminEnableRole, createAccount } = await mock({ uid: undefined, config, projectId });
+
+            async function createAccountWithRole(props: { account: AccountRecord; role: string }) {
+                await createAccount(props.account.uid, props.account);
+                await adminEnableRole(props.account.uid, props.role);
+            }
+
+            await createAccountWithRole(userWithRole);
+            await createAccountWithRole(userWithoutRole);
+        });
+        const guardedCol = "posts";
+        const customRules = `
+match /${guardedCol}/{post} {
+    allow read: if true;
+    allow create, write: if isAuthenticated() && callerHasRole("editor");
+}
+        `;
+
+        it("User without a required role cannot write to callerHasRole() guarded collection", async () => {
+            const { userDoc, uid } = await mock({ uid: userWithoutRole.account.uid, config, customRules, projectId });
+
+            await assert.isRejected(userDoc(guardedCol, uid).set({ da: "ta" }), /PERMISSION_DENIED/);
+        });
+
+        it("User with a required role can write to callerHasRole() guarded collection", async () => {
+            const { userDoc, uid } = await mock({ uid: userWithRole.account.uid, config, customRules, projectId });
+
+            await assert.isFulfilled(userDoc(guardedCol, uid).set({ da: "ta" }));
+        });
     });
 });

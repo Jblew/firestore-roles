@@ -14,7 +14,7 @@ describe("Configuration", () => {
     });
 
     it("Disallows managing non-defined role", () => {
-        const config: Configuration = {
+        const configDisallowed: Configuration = {
             ...Configuration.DEFAULT,
             roles: {
                 admin: { manages: ["nonexistentrole"] },
@@ -22,7 +22,7 @@ describe("Configuration", () => {
             },
         };
 
-        expect(() => Configuration.validate(config)).to.throw("ArgumentError");
+        expect(() => Configuration.validate(configDisallowed)).to.throw("ArgumentError");
     });
 
     //

@@ -24,4 +24,37 @@ describe("Configuration", () => {
 
         expect(() => Configuration.validate(config)).to.throw("ArgumentError");
     });
+
+    //
+    const config: Configuration = {
+        accountsCollection: "accounts",
+        roleCollectionPrefix: "role_",
+        roles: {
+            admin: { manages: ["manager", "editor"] },
+            manager: { manages: ["editor"] },
+            editor: { manages: [] },
+        },
+    };
+
+    describe("#isAllowedRole", () => {
+        it("Returns true for allowed role", () => {
+            expect(Configuration.isAllowedRole(config, "admin")).to.be.equal(true);
+        });
+
+        it("Returns false for disallowed role", () => {
+            expect(Configuration.isAllowedRole(config, "nonexistent-role")).to.be.equal(false);
+        });
+    });
+
+    describe("#assertAllowedRole", () => {
+        it("Throws nothing on allowed role", () => {
+            Configuration.assertAllowedRole(config, "admin");
+        });
+
+        it("Throws FirestoreRolesAccountDoesntExistError for disallowed role", () => {
+            expect(() => Configuration.assertAllowedRole(config, "nonexistent-role"))
+                .to.throw("is not defined")
+                .that.haveOwnProperty("firestoreRolesRoleNotDefinedError");
+        });
+    });
 });

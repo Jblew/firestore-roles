@@ -50,16 +50,17 @@ export class RulesGenerator {
         return `
     match /${this.config.roleCollectionPrefix}${roleName}/{uid} {
         allow get: if isAuthenticated();
-        allow read, write, list: if isAuthenticated() && ( false
+        allow read, list, create, delete: if isAuthenticated() && ( false
                 // managers of the ${roleName} role:
                 ${managerStatements}
         );
+        allow update: if false;
     }
         `;
     }
 
     private constructAccountReadStatements() {
-        const indentation = "            ";
+        const indentation = "               ";
         const statements: string[] = [];
         for (const roleName of _.keys(this.config.roles)) {
             const role: Configuration.Role = this.config.roles[roleName];
@@ -81,11 +82,15 @@ service cloud.firestore {
 
     match /${this.config.accountsCollection}/{uid} {
         allow create: if allowAccountCreateWithNonFakeParams(uid);
-        allow read: if accountBelongsToCaller(uid);
-        allow read: if isAuthenticated() && ( false
-            // manager of a role can read data of users who belong to the role
-            ${this.constructAccountReadStatements()}
+        allow get: if isAuthenticated() &&
+         (
+            accountBelongsToCaller(uid)
+             || ( false
+                // manager of a role can read data of users who belong to the role
+${this.constructAccountReadStatements()}
+            )
         );
+        allow list: if false;
     }
     ${this.constructRoleManagementStatements()}
 
@@ -102,15 +107,15 @@ service cloud.firestore {
     }
 
     function accountBelongsToCaller(uid) {
-        return request.auth != null && request.auth.uid == uid;
+        return request.auth != null && uid != null && request.auth.uid == uid;
     }
 
-    function uidExistsInRolesCollection(colName, uid) {
-        return exists(/databases/$(database)/documents/{colName}/{uid});
+    function docExistsInCollection(colName, docName) {
+        return exists(/databases/$(database)/documents/$(colName)/$(docName));
     }
 
     function userHasRole(role, uid) {
-        return uidExistsInRolesCollection("${this.config.roleCollectionPrefix}" + role, uid);
+        return docExistsInCollection("${this.config.roleCollectionPrefix}" + role, uid);
     }
 
     function callerHasRole(role) {

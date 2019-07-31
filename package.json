@@ -95,7 +95,8 @@
     "exclude": [
       "**/*.d.ts",
       "**/*.test.ts",
-      "**/_test_"
+      "**/_test_",
+      "src/cli/cli-entrypoint.ts"
     ],
     "include": [
       "src/**/*.ts"

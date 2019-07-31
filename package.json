@@ -4,6 +4,12 @@
   "description": "Role management system for Firestore",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": "dist/cli/cli-entrypoint.js",
+  "browser": {
+    "path": false,
+    "fs": false,
+    "./cli": false
+  },
   "engines": {
     "node": ">=8"
   },
@@ -24,6 +30,7 @@
     "verify": "firebase emulators:exec --only firestore --token=\"$FIREBASE_EMULATOR_TOKEN\" \"npm run do_verify\"",
     "lint-fix": "tslint --fix -c tslint.json -p tsconfig.lint.json",
     "checkall": "npm run lint-fix && npm run build && npm run test && npm run verify",
+    "cli": "node dist/cli/cli-entrypoint.js",
     "semantic-release": "semantic-release"
   },
   "dependencies": {

@@ -94,7 +94,7 @@ ${this.constructAccountReadStatements()}
     }
     ${this.constructRoleManagementStatements()}
 
-    ${this.customRules}
+${this.indent(this.customRules, "    ")}
   }
 }
     `;
@@ -130,6 +130,10 @@ ${this.constructAccountReadStatements()}
             ;
     }
     `);
+    }
+
+    private indent(str: string, indentation: string) {
+        return indentation + str.split("\n").join(`\n${indentation}`);
     }
 
     public static DEFAULT_CUSTOM_RULES = `

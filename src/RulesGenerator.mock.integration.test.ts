@@ -7,6 +7,7 @@ import * as uuid from "uuid/v4";
 import { Configuration } from "./Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
 import { AccountRecord } from "./model/AccountRecord";
+import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
 import { RulesGenerator } from "./RulesGenerator";
 
 export async function mock(props: {
@@ -39,10 +40,17 @@ export async function mock(props: {
         return adminFirestore.collection(col).doc(d(doc));
     }
 
-    async function createAccount(uid: string): Promise<AccountRecord> {
+    async function createAccount(uidOrUndefined: string | undefined): Promise<AccountRecord> {
+        const uid = d(uidOrUndefined);
         const ar = getSampleAccountRecord(uid);
         await adminDoc(props.config.accountsCollection, uid).set(ar);
         return ar;
+    }
+
+    async function adminEnableRole(uidOrUndefined: string | undefined, role: string) {
+        const uid = d(uidOrUndefined);
+
+        await adminDoc(props.config.roleCollectionPrefix + role, uid).set(FirestoreRecordKeeper);
     }
 
     return {
@@ -56,6 +64,7 @@ export async function mock(props: {
         userDoc,
         adminDoc,
         createAccount,
+        adminEnableRole,
         ...props,
     };
 }
@@ -68,7 +77,6 @@ export function getSampleAccountRecord(uid: string): AccountRecord & { displayNa
         providerId: "google",
         photoURL: null,
         phoneNumber: null,
-        roles: [],
         requestedRoles: [],
     };
 }

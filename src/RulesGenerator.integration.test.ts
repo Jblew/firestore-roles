@@ -6,25 +6,31 @@ import "mocha";
 import * as uuid from "uuid";
 
 import { Configuration } from "./Configuration";
-import { cleanupEach, d, mock, getSampleAccountRecord } from "./RulesGenerator.mock.integration.test";
+import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
+import { cleanupEach, getSampleAccountRecord, mock } from "./RulesGenerator.mock.integration.test";
 
 chaiUse(chaiAsPromised);
 
 afterEach(cleanupEach);
 
-const config: Configuration = {
-    accountsCollection: "accounts",
-    roleCollectionPrefix: "role_",
-    roles: {
-        admin: { manages: ["manager", "editor", "reviewer"] },
-        manager: { manages: ["editor", "reviewer"] },
-        editor: { manages: [] },
-        reviewer: { manages: [] },
-    },
-};
+/**
+ * This integration tests serve mostly for security reasons. That is why the checks are performed on
+ * raw firestore calls level instead of using FirestoreRoles class
+ */
 
 describe.only("RulesGenerator", function() {
     this.timeout(3000);
+
+    const config: Configuration = {
+        accountsCollection: "accounts",
+        roleCollectionPrefix: "role_",
+        roles: {
+            admin: { manages: ["manager", "editor", "reviewer"] },
+            manager: { manages: ["editor", "reviewer"] },
+            editor: { manages: [] },
+            reviewer: { manages: [] },
+        },
+    };
 
     describe("Generated rules for accounts collection", () => {
         describe("Not authenticated user", () => {
@@ -127,7 +133,7 @@ describe.only("RulesGenerator", function() {
 
                 it("Cannot create account with not own uid", async () => {
                     const acc = getSampleAccountRecord(uuid());
-                    const { userDoc, uid } = await mock({
+                    const { userDoc } = await mock({
                         uid: acc.uid,
                         config,
                         auth: { email: acc.email, name: acc.displayName },
@@ -166,7 +172,7 @@ describe.only("RulesGenerator", function() {
 
                 it("Can read account with own uid", async () => {
                     const { userDoc, uid, createAccount } = await mock({ uid: uuid(), config });
-                    const createdAccount = await createAccount(d(uid));
+                    const createdAccount = await createAccount(uid);
 
                     await assert.isFulfilled(userDoc(col, createdAccount.uid).get());
                 });
@@ -180,19 +186,57 @@ describe.only("RulesGenerator", function() {
 
                 it("Cannot list", async () => {
                     const { userFirestore, uid, createAccount } = await mock({ uid: uuid(), config });
-                    const createdAccount = await createAccount(d(uid));
+                    await createAccount(uid);
 
                     await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
                 });
             });
 
             describe("Roles collection", () => {
-                it.skip("Can get own uid");
-                it.skip("Can get other user uid");
-                it.skip("Cannot list");
-                it.skip("Cannot update");
-                it.skip("Cannot create");
-                it.skip("Cannot delete");
+                const role = _.keys(config.roles)[0];
+                const col = config.roleCollectionPrefix + role;
+
+                it("Can get own uid", async () => {
+                    const { userDoc, uid, adminEnableRole } = await mock({ uid: uuid(), config });
+                    await adminEnableRole(uid, role);
+
+                    await assert.isFulfilled(userDoc(col, uid).get());
+                });
+
+                it("Can get other user uid", async () => {
+                    const { userDoc, uid, adminEnableRole } = await mock({ uid: uuid(), config });
+                    const someoneElsesUid = `someone-${uid}`;
+                    await adminEnableRole(someoneElsesUid, role);
+
+                    await assert.isFulfilled(userDoc(col, someoneElsesUid).get());
+                });
+
+                it("Cannot list", async () => {
+                    const { userFirestore, uid, adminEnableRole } = await mock({ uid: uuid(), config });
+                    await adminEnableRole(uid, role);
+
+                    await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+                });
+
+                it("Cannot update", async () => {
+                    const { userDoc, uid, adminEnableRole } = await mock({ uid: uuid(), config });
+                    await adminEnableRole(uid, role);
+
+                    await assert.isRejected(userDoc(col, uid).update({ da: "ta" }), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot create", async () => {
+                    const { userDoc, uid } = await mock({ uid: uuid(), config });
+
+                    await assert.isRejected(userDoc(col, uid).set(FirestoreRecordKeeper), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot delete", async () => {
+                    const { userDoc, uid, adminEnableRole } = await mock({ uid: uuid(), config });
+                    await adminEnableRole(uid, role);
+
+                    await assert.isRejected(userDoc(col, uid).delete(), /PERMISSION_DENIED/);
+                });
             });
         });
 

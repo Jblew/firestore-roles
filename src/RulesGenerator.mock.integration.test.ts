@@ -6,31 +6,37 @@ import * as uuid from "uuid/v4";
 
 import { Configuration } from "./Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
-import { RulesGenerator } from "./RulesGenerator";
 import { AccountRecord } from "./model/AccountRecord";
+import { RulesGenerator } from "./RulesGenerator";
 
-export async function mock(props: { uid: string | undefined; config: Configuration; customRules?: string }) {
+export async function mock(props: {
+    uid: string | undefined;
+    config: Configuration;
+    customRules?: string;
+    auth?: { email: string; name: string };
+}) {
     const projectId = `unit-testing-${uuid()}`;
+    const auth = props.uid ? { ...(props.auth || {}), uid: props.uid } : undefined;
     const app = firebase.initializeTestApp({
         projectId,
-        auth: props.uid ? { uid: props.uid, email: "alice@example.com" } : undefined,
+        auth,
     });
     const userFirestore = app.firestore();
 
     const adminApp = firebase.initializeAdminApp({ projectId });
     const adminFirestore = adminApp.firestore();
 
-    const rules = RulesGenerator.generateRules(props.config, props.customRules || "");
+    const rules = new RulesGenerator(props.config, props.customRules || "").asString();
     await firebase.loadFirestoreRules({ projectId, rules });
 
     const userRoles = new FirestoreRoles(props.config, userFirestore);
     const adminRoles = new FirestoreRoles(props.config, adminFirestore);
 
-    function userDoc(col: string, doc: string) {
-        return userFirestore.collection(col).doc(doc);
+    function userDoc(col: string, doc: string | undefined) {
+        return userFirestore.collection(col).doc(d(doc));
     }
-    function adminDoc(col: string, doc: string) {
-        return adminFirestore.collection(col).doc(doc);
+    function adminDoc(col: string, doc: string | undefined) {
+        return adminFirestore.collection(col).doc(d(doc));
     }
 
     async function createAccount(uid: string): Promise<AccountRecord> {
@@ -54,7 +60,7 @@ export async function mock(props: { uid: string | undefined; config: Configurati
     };
 }
 
-export function getSampleAccountRecord(uid: string): AccountRecord {
+export function getSampleAccountRecord(uid: string): AccountRecord & { displayName: string; email: string } {
     return {
         uid,
         displayName: `sample-account-${uid}`,

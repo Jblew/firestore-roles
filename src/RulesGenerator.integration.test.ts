@@ -5,8 +5,7 @@ import * as _ from "lodash";
 import "mocha";
 
 import { Configuration } from "./Configuration";
-import { cleanupEach, mock, d } from "./RulesGenerator.mock.integration.test";
-import * as uuid from "uuid";
+import { cleanupEach, d, mock, getSampleAccountRecord } from "./RulesGenerator.mock.integration.test";
 
 chaiUse(chaiAsPromised);
 
@@ -14,6 +13,7 @@ afterEach(cleanupEach);
 
 const config: Configuration = {
     accountsCollection: "accounts",
+    roleCollectionPrefix: "role_",
     roles: {
         admin: { manages: ["manager", "editor", "reviewer"] },
         manager: { manages: ["editor", "reviewer"] },
@@ -26,48 +26,50 @@ describe.only("RulesGenerator", function() {
     this.timeout(3000);
 
     describe("Generated rules for accounts collection", () => {
-        const col = config.accountsCollection;
         describe("Not authenticated user", () => {
-            it("Cannot create in accounts collection", async () => {
-                const { userFirestore } = await mock({ uid: undefined, config });
+            describe("Accounts collection", () => {
+                const col = config.accountsCollection;
 
-                await assert.isRejected(userFirestore.collection(col).add({ da: "ta" }), /PERMISSION_DENIED/);
-                await assert.isRejected(userFirestore.collection(col).add({ roles: ["ta"] }), /PERMISSION_DENIED/);
+                it("Cannot create in accounts collection", async () => {
+                    const { userFirestore } = await mock({ uid: undefined, config });
+
+                    await assert.isRejected(userFirestore.collection(col).add({ da: "ta" }), /PERMISSION_DENIED/);
+                    await assert.isRejected(userFirestore.collection(col).add({ roles: ["ta"] }), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot get from accounts collection", async () => {
+                    const { userDoc, adminDoc } = await mock({ uid: undefined, config });
+                    await adminDoc(col, "a").set({ da: "ta" });
+
+                    await assert.isRejected(userDoc(col, "a").get(), /false for 'get'/);
+                });
+
+                it("Cannot set to accounts collection", async () => {
+                    const { userDoc } = await mock({ uid: undefined, config });
+
+                    await assert.isRejected(userDoc(col, "a").set({ da: "ta" }), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot update in accounts collection", async () => {
+                    const { userDoc, adminDoc } = await mock({ uid: undefined, config });
+                    await adminDoc(col, "a").set({ da: "ta" });
+
+                    await assert.isRejected(userDoc(col, "a").update({ ano: "ther" }), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot delete in accounts collection", async () => {
+                    const { userDoc, adminDoc } = await mock({ uid: undefined, config });
+                    await adminDoc(col, "a").set({ da: "ta" });
+
+                    await assert.isRejected(userDoc(col, "a").delete(), /PERMISSION_DENIED/);
+                });
+
+                it("Cannot list from accounts collection", async () => {
+                    const { userFirestore } = await mock({ uid: undefined, config });
+
+                    await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
+                });
             });
-
-            it("Cannot get from accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
-                await adminDoc(col, "a").set({ da: "ta" });
-
-                await assert.isRejected(userDoc(col, "a").get(), /false for 'get'/);
-            });
-
-            it("Cannot set to accounts collection", async () => {
-                const { userDoc } = await mock({ uid: undefined, config });
-
-                await assert.isRejected(userDoc(col, "a").set({ da: "ta" }), /PERMISSION_DENIED/);
-            });
-
-            it("Cannot update in accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
-                await adminDoc(col, "a").set({ da: "ta" });
-
-                await assert.isRejected(userDoc(col, "a").update({ ano: "ther" }), /PERMISSION_DENIED/);
-            });
-
-            it("Cannot delete in accounts collection", async () => {
-                const { userDoc, adminDoc } = await mock({ uid: undefined, config });
-                await adminDoc(col, "a").set({ da: "ta" });
-
-                await assert.isRejected(userDoc(col, "a").delete(), /PERMISSION_DENIED/);
-            });
-
-            it("Cannot list from accounts collection", async () => {
-                const { userFirestore } = await mock({ uid: undefined, config });
-
-                await assert.isRejected(userFirestore.collection(col).get(), /false for 'list'/);
-            });
-        });
 
         describe("Authenticated, not manager", () => {
             it("Can create account with own uid", async () => {

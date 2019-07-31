@@ -11,12 +11,6 @@ import { FirebaseAccount } from "./types/FirebaseAccount";
 
 chaiUse(chaiAsPromised);
 
-before("startup", function() {
-    this.timeout(4000);
-    startupAll();
-});
-afterEach(cleanupEach);
-
 const config: Configuration.Optional = {
     roles: {
         admin: { manages: ["manager", "editor", "reviewer"] },
@@ -28,6 +22,12 @@ const config: Configuration.Optional = {
 
 describe("FirestoreRoles", function() {
     this.timeout(3000);
+
+    before("startup", function() {
+        this.timeout(4000);
+        startupAll();
+    });
+    afterEach(cleanupEach);
 
     describe("registerUser", () => {
         it("Adds user to database", async () => {

@@ -12,8 +12,6 @@ import { cleanupEach, getSampleAccountRecord, mock } from "./RulesGenerator.mock
 
 chaiUse(chaiAsPromised);
 
-afterEach(cleanupEach);
-
 /**
  * This integration tests serve mostly for security reasons. That is why the checks are performed on
  * raw firestore calls level instead of using FirestoreRoles class
@@ -21,6 +19,8 @@ afterEach(cleanupEach);
 
 describe("RulesGenerator", function() {
     this.timeout(3000);
+
+    afterEach(cleanupEach);
 
     const config: Configuration = {
         accountsCollection: "accounts",

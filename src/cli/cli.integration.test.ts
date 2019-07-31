@@ -13,12 +13,12 @@ import { createTempDir, deleteTempDir, LoggerMock } from "./cli.mock.integration
 
 chaiUse(chaiAsPromised);
 
-let tempDir = "";
-beforeEach(async () => (tempDir = createTempDir()));
-afterEach(async () => await deleteTempDir(tempDir));
-
 describe("cli", function() {
     this.timeout(3000);
+
+    let tempDir = "";
+    beforeEach(async () => (tempDir = createTempDir()));
+    afterEach(async () => await deleteTempDir(tempDir));
 
     const config: Configuration = {
         accountsCollection: "accounts",

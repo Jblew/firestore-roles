@@ -31,6 +31,9 @@
     "do_verify": "find src -name '*.integration.test.ts' | TS_NODE_FILES=true TS_NODE_CACHE=false TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' xargs mocha -r ts-node/register --require source-map-support/register",
     "verify": "firebase emulators:exec --only firestore --token=\"$FIREBASE_EMULATOR_TOKEN\" \"npm run do_verify\"",
     "lint-fix": "tslint --fix -c tslint.json -p tsconfig.lint.json",
+    "testall": "npm run test && npm run verify",
+    "testall-with-coverage": "nyc --reporter=lcov npm run testall",
+    "upload-coverage": "codecov",
     "checkall": "npm run lint-fix && npm run build && npm run test && npm run verify",
     "cli": "node dist/cli/cli-entrypoint.js",
     "semantic-release": "semantic-release"
@@ -51,14 +54,19 @@
     "@types/lodash": "^4.14.136",
     "@types/mocha": "5.2.7",
     "@types/node": "^12.6.8",
+    "@types/rimraf": "^2.0.2",
     "@types/sinon": "7.0.13",
     "@types/uuid": "^3.4.5",
     "bluebird": "^3.5.5",
     "chai": "4.2.0",
     "chai-as-promised": "7.1.1",
+    "codecov": "^3.5.0",
     "husky": "^3.0.2",
+    "istanbul": "^0.4.5",
     "jblew-tslint-config": "^0.1.0",
     "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
+    "rimraf": "^2.6.3",
     "semantic-release": "^15.13.19",
     "sinon": "7.3.2",
     "ts-node": "8.3.0",
@@ -78,6 +86,23 @@
         0
       ]
     }
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/_test_"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "all": true
   },
   "husky": {
     "hooks": {

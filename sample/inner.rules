@@ -1,0 +1,9 @@
+
+  ////////////////////////////
+ // PROJECT SPECIFIC RULES //
+////////////////////////////
+
+match /posts/{post} {
+    allow read: if true;
+    allow write: if isAuthenticated() && callerHasRole("editor");
+}

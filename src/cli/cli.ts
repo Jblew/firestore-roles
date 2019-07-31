@@ -46,6 +46,7 @@ export class Cli {
     }
 
     private handleError(error: Error) {
+        /* istanbul ignore else "normally all errors are wrapped with CliError" */
         if ((error as CliError).cliError) this.logger.error(`Error: ${error.message}`);
         else this.logger.error(error + "" + error.stack);
     }
@@ -62,7 +63,9 @@ export class Cli {
     }
 
     private async processGenerateCmd(args: string[]): Promise<number> {
-        if (args.length < 2 || args.length > 3) return this.exitWithUsage();
+        if (args.length < 2 || args.length > 3) {
+            /* istanbul ignore next "This was already checked previously" */ return this.exitWithUsage();
+        }
 
         let outputFile: string | undefined;
         const [configFileUnresolved, rulesFileUnresolved] = args;
@@ -87,7 +90,7 @@ export class Cli {
         return 0;
     }
 }
-
+/* istanbul ignore next "Namespace init bug" */
 export namespace Cli {
     export interface Logger {
         log: (msg: string) => void;

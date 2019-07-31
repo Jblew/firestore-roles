@@ -33,23 +33,59 @@ describe("cli", function() {
 
     const innerRules = `match /post/{uid} {}`;
 
-    it("Saves rules to specified file", async () => {
-        const configFile = path.resolve(tempDir, "config.js");
-        const innerRulesFile = path.resolve(tempDir, "inner.rules");
-        const outputFile = path.resolve(tempDir, "deploy.rules");
+    describe("Test with saving the file", () => {
+        let configFile = "";
+        let innerRulesFile = "";
+        let outputFile = "";
+        let logger: LoggerMock = new LoggerMock();
         const configContents = `module.exports = ${JSON.stringify(config)}`;
-        fs.writeFileSync(configFile, configContents, "UTF-8");
-        fs.writeFileSync(innerRulesFile, innerRules, "UTF-8");
-        const logger = new LoggerMock();
+        beforeEach(async () => {
+            configFile = path.resolve(tempDir, "config.js");
+            innerRulesFile = path.resolve(tempDir, "inner.rules");
+            outputFile = path.resolve(tempDir, "deploy.rules");
 
-        const args = ["node", "cli-entrypoint.js", "generate", configFile, innerRulesFile, outputFile];
-        const exitCode = await new Cli(logger, args).parseCli();
+            fs.writeFileSync(configFile, configContents, "UTF-8");
+            fs.writeFileSync(innerRulesFile, innerRules, "UTF-8");
 
-        expect(exitCode).to.be.equal(0);
-        expect(logger.stderr).to.be.equal("");
-        expect(fs.existsSync(outputFile), "Output file exists").to.be.equal(true);
-        const outputRead = fs.readFileSync(outputFile, "UTF-8");
+            logger = new LoggerMock();
+        });
 
-        expect(outputRead).to.include(innerRules);
+        it("Saves rules to specified file", async () => {
+            const args = ["node", "cli-entrypoint.js", "generate", configFile, innerRulesFile, outputFile];
+            const exitCode = await new Cli(logger, args).parseCli();
+
+            expect(exitCode).to.be.equal(0);
+            expect(logger.stderr).to.be.equal("");
+            expect(fs.existsSync(outputFile), "Output file exists").to.be.equal(true);
+            const outputRead = fs.readFileSync(outputFile, "UTF-8");
+
+            expect(outputRead).to.include(innerRules);
+        });
+
+        it("Prints usage on wrong cmd", async () => {
+            const args = ["node", "cli-entrypoint.js", "nonexistent-cmd", configFile, innerRulesFile, outputFile];
+            const exitCode = await new Cli(logger, args).parseCli();
+
+            expect(exitCode).to.be.equal(1);
+            expect(logger.stdout).to.include("Usage");
+        });
+
+        it("Prints usage on wrong no of arguments", async () => {
+            const args = ["node", "cli-entrypoint.js", "generate"];
+            const exitCode = await new Cli(logger, args).parseCli();
+
+            expect(exitCode).to.be.equal(1);
+            expect(logger.stdout).to.include("Usage");
+        });
+
+        it("Prints to stderr on error (file doesnt exist)", async () => {
+            const args = ["node", "cli-entrypoint.js", "generate", "nonexistent.config.f", innerRulesFile, outputFile];
+            const exitCode = await new Cli(logger, args).parseCli();
+
+            expect(exitCode).to.be.equal(1);
+            expect(logger.stderr)
+                .to.be.a("string")
+                .with.length.gt(0);
+        });
     });
 });

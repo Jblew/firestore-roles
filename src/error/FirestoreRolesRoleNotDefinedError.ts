@@ -4,6 +4,6 @@ export class FirestoreRolesRoleNotDefinedError extends FirestoreRolesError {
     public firestoreRolesRoleNotDefinedError = true;
 
     public constructor(msg: string, cause?: Error) {
-        super(msg, cause);
+        super(msg, cause) /* istanbul ignore next "Semicolon bug" */;
     }
 }

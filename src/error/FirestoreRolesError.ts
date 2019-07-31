@@ -4,6 +4,6 @@ export class FirestoreRolesError extends ChainedError {
     public firestoreRolesError = true;
 
     public constructor(msg: string, cause?: Error) {
-        super(msg, cause);
+        super(msg, cause) /* istanbul ignore next "Semicolon bug" */;
     }
 }

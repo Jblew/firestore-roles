@@ -1,56 +1,103 @@
+// tslint:disable member-ordering
 import * as _ from "lodash";
+import ow from "ow";
 
 import { Configuration } from "./Configuration";
 
-export namespace RulesGenerator {
-    export function generateRules(config: Configuration, customRules: string = DEFAULT_CUSTOM_RULES): string {
-        Configuration.validate(config);
-        return fromTemplate({
-            accountsCollection: config.accountsCollection,
-            roleManagementStatements: constructRoleManagementStatements(config),
-            customRules,
-        });
+export class RulesGenerator {
+    private config: Configuration;
+    private customRules: string;
+
+    public constructor(config: Configuration, customRules: string = RulesGenerator.DEFAULT_CUSTOM_RULES) {
+        Configuration.validate(config, "RulesGenerator.constructor(config) ");
+        this.config = config;
+
+        ow(customRules, "customRules", ow.string);
+        this.customRules = customRules;
     }
 
-    function constructRoleManagementStatements(config: Configuration) {
+    public asString(): string {
+        return this.fromTemplate();
+    }
+
+    private getManagersPerRole() {
+        const managersPerRole: { [x: string]: string[] } = {};
+
+        const getManagers = (roleName: string) => {
+            return _.toPairs(this.config.roles)
+                .filter(r => r[1].manages.indexOf(roleName) >= 0)
+                .map(r => r[0]);
+        };
+
+        for (const roleName of _.keys(this.config.roles)) {
+            managersPerRole[roleName] = getManagers(roleName);
+        }
+        return managersPerRole;
+    }
+
+    private constructRoleManagementStatements() {
+        const roleManagers = this.getManagersPerRole();
+
         const indentation = "                ";
         const statements: string[] = [];
-        for (const roleName of _.keys(config.roles)) {
-            const role: Configuration.Role = config.roles[roleName];
-            const managedRoles = role.manages.map(managedRole => `"${managedRole}"`).join(", ");
-            statements.push(`${indentation} || allowRoleManagementOnly("${roleName}", [${managedRoles}])`);
+        for (const roleName of _.keys(this.config.roles)) {
+            statements.push(this.constructSingleRoleStatement(roleName, roleManagers[roleName]));
         }
         return statements.join(`\n`);
     }
 
-    function fromTemplate(props: {
-        accountsCollection: string;
-        roleManagementStatements: string;
-        customRules: string;
-    }) {
+    private constructSingleRoleStatement(roleName: string, roleManagers: string[]) {
+        const managerStatements = roleManagers.map(m => ` || callerHasRole("${m}")`).join("");
+        return `
+    match /${this.config.roleCollectionPrefix}${roleName}/{uid} {
+        allow get: if isAuthenticated();
+        allow read, write, list: if isAuthenticated() && ( false
+                // managers of the ${roleName} role:
+                ${managerStatements}
+        );
+    }
+        `;
+    }
+
+    private constructAccountReadStatements() {
+        const indentation = "            ";
+        const statements: string[] = [];
+        for (const roleName of _.keys(this.config.roles)) {
+            const role: Configuration.Role = this.config.roles[roleName];
+            const managedRolesStatement = role.manages
+                .map(managedRole => ` || userHasRole("${managedRole}", uid)`)
+                .join("");
+            statements.push(`${indentation} || callerHasRole("${roleName}") && (false${managedRolesStatement})`);
+        }
+        return statements.join(`\n`);
+    }
+
+    private fromTemplate() {
         return `
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    ${METHODS}
+    ${this.getMethods()}
 
-    match /${props.accountsCollection}/{uid} {
+    match /${this.config.accountsCollection}/{uid} {
+        allow create: if allowAccountCreateWithNonFakeParams();
         allow read: if accountBelongsToCaller(uid);
-        allow create: if allowCreateAccountWithEmptyRoles(uid);
-        allow update, delete, read: if (
-                (accountBelongsToCaller(uid) && disallowSelfRolesManagement())
-${props.roleManagementStatements}
+        allow read: if isAuthenticated() && ( false
+            // manager of a role can read data of users who belong to the role
+            ${this.constructAccountReadStatements()}
         );
     }
+    ${this.constructRoleManagementStatements()}
 
-    ${props.customRules}
+    ${this.customRules}
   }
 }
     `;
     }
 
-    const METHODS = Object.freeze(`
+    private getMethods() {
+        return Object.freeze(`
     function isAuthenticated() {
         return request.auth != null;
     }
@@ -59,37 +106,31 @@ ${props.roleManagementStatements}
         return request.auth != null && request.auth.uid == uid;
     }
 
-    function getRoles() {
-        return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.roles;
+    function uidExistsInRolesCollection(colName, uid) {
+        return exists(/databases/$(database)/documents/{colName}/{uid});
     }
 
-    function hasRoles(roles) {
-        return isAuthenticated() && getRoles().hasAll(keys)
+    function userHasRole(role, uid) {
+        return uidExistsInRolesCollection("${this.config.roleCollectionPrefix}" + role, uid);
     }
 
-    function disallowModifyingAccountExceptRoles() {
-        return !(resource.data.keys().length == 1 && ("roles" in request.resource.data.keys()));
+    function callerHasRole(role) {
+        return userHasRole(role, request.auth.uid);
     }
 
-    function allowRoleManagementOnly(manager, roles) {
-        return hasRoles([manager]) && disallowModifyingAccountExceptRoles()
-             && roles.hasAll(request.resource.data.roles);
-    }
-
-    function disallowSelfRolesManagement() {
-        return !("roles" in resource.data.keys());
-    }
-
-    function allowCreateAccountWithEmptyRoles(uid) {
-        return accountBelongsToCaller(uid) && (!("roles" in request.resource.data.keys()));
+    function allowAccountCreateWithNonFakeParams() {
+        return isAuthenticated()
+             && request.auth.token.email == request.resource.data.email
+             && request.auth.token.name == request.resource.data.name
     }
     `);
+    }
 
-    const DEFAULT_CUSTOM_RULES = `
+    public static DEFAULT_CUSTOM_RULES = `
         ... your rules here, eg.:
         match /posts/{post} {
             allow read: if true;
-            allow write: if isAuthenticated() && hasRoles(["author"]);
+            allow write: if isAuthenticated() && callerHasRole("editor");
         }
     `;
 }

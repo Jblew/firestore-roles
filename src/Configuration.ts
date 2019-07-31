@@ -2,6 +2,7 @@
 import * as _ from "lodash";
 import ow from "ow";
 
+import { FirestoreRolesRoleNotDefinedError } from "./error/FirestoreRolesRoleNotDefinedError";
 import { ow_catch } from "./util";
 
 export interface Configuration extends Configuration.Optional {
@@ -33,6 +34,10 @@ export namespace Configuration {
 
     export function isAllowedRole(config: Configuration, role: string): boolean {
         return typeof config.roles[role] !== "undefined";
+    }
+
+    export function assertAllowedRole(config: Configuration, role: string) {
+        if (!isAllowedRole(config, role)) throw new FirestoreRolesRoleNotDefinedError(`Role '${role}' is not defined`);
     }
 
     export const DEFAULT: Configuration = {

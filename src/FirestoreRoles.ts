@@ -33,6 +33,22 @@ export class FirestoreRoles {
         await this.saveAccountRecord(accountRecord);
     }
 
+    public async enableRole(uid: string, role: string) {
+        ow(uid, "FirestoreRoles.enableRole(uid)", ow.string.nonEmpty);
+        ow(role, "FirestoreRoles.enableRole(role)", ow.string.nonEmpty);
+        Configuration.assertAllowedRole(this.config, role); // throws
+
+        await this.getRoleDoc(uid, role).set(FirestoreRecordKeeper);
+    }
+
+    public async disableRole(uid: string, role: string) {
+        ow(uid, "FirestoreRoles.disableRole(uid)", ow.string.nonEmpty);
+        ow(role, "FirestoreRoles.disableRole(role)", ow.string.nonEmpty);
+        Configuration.assertAllowedRole(this.config, role); // throws
+
+        await this.getRoleDoc(uid, role).delete();
+    }
+
     public async requestRoles(uid: string, roles: string[]) {
         ow(uid, "FirestoreRoles.requestRoles(uid)", ow.string.nonEmpty);
         ow(
@@ -47,28 +63,6 @@ export class FirestoreRoles {
     public async getRequestedRoles(uid: string): Promise<string[]> {
         const aRec = await this.getAccountRecord(uid);
         return aRec.requestedRoles;
-    }
-
-    public async enableRole(uid: string, role: string) {
-        ow(uid, "FirestoreRoles.enableRole(uid)", ow.string.nonEmpty);
-        ow(
-            role,
-            "FirestoreRoles.enableRole(role)",
-            ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v)),
-        );
-
-        await this.getRoleDoc(uid, role).set(FirestoreRecordKeeper);
-    }
-
-    public async disableRole(uid: string, role: string) {
-        ow(uid, "FirestoreRoles.disableRole(uid)", ow.string.nonEmpty);
-        ow(
-            role,
-            "FirestoreRoles.disableRole(role)",
-            ow.string.nonEmpty.is(v => Configuration.isAllowedRole(this.config, v)),
-        );
-
-        await this.getRoleDoc(uid, role).delete();
     }
 
     public async removeFromRequestedRoles(uid: string, rolesToRemove: string[]) {
@@ -120,7 +114,7 @@ export class FirestoreRoles {
     }
 
     private getRoleDoc(uid: string, role: string) {
-        ow(role, ow.string.is(v => Configuration.isAllowedRole(this.config, role) || `Role ${role} is not defined`));
+        Configuration.assertAllowedRole(this.config, role); // throws
         const col = this.config.roleCollectionPrefix + role;
         return this.firestore.collection(col).doc(uid);
     }

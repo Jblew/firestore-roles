@@ -84,6 +84,11 @@ export class FirestoreRoles {
         return ar;
     }
 
+    public async userExists(uid: string): Promise<boolean> {
+        const docSnapshot = await this.getUserDoc(uid).get();
+        return docSnapshot.exists;
+    }
+
     private async doRequestRoles(uid: string, newRolesToRequest: string[]) {
         const accountRecord = await this.getAccountRecord(uid);
         const updatedRequestedRoles = _.uniq([...accountRecord.requestedRoles, ...newRolesToRequest]);

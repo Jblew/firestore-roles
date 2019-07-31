@@ -58,6 +58,24 @@ describe("FirestoreRoles", function() {
         });
     });
 
+    describe("userExists", () => {
+        it("Returns true for user that exists", async () => {
+            const { roles, sampleAccount } = mock({});
+            await roles.registerUser(sampleAccount);
+
+            const exists = await roles.userExists(sampleAccount.uid);
+            expect(exists).to.be.equal(true);
+        });
+
+        it("Returns false for user that does not exists", async () => {
+            const { roles, sampleAccount } = mock({});
+            await roles.registerUser(sampleAccount);
+
+            const exists = await roles.userExists("-other-uid-");
+            expect(exists).to.be.equal(false);
+        });
+    });
+
     describe("enableRole", () => {
         it("Enables role of account", async () => {
             const { roles, sampleAccount } = mock(config);

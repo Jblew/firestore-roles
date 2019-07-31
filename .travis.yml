@@ -16,7 +16,7 @@ install:
 
 script:
     - npm run build
-    - npm run testall-with-coverage
+    - npm run testall-with-coverage-lcov
 
 after_success:
     - npm run upload-coverage

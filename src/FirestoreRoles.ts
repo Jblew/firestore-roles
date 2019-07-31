@@ -76,6 +76,14 @@ export class FirestoreRoles {
         await this.firestore.runTransaction(async () => await this.doRemoveFromRequestedRoles(uid, rolesToRemove));
     }
 
+    public async getAccountRecord(uid: string): Promise<AccountRecord> {
+        const arSnapshot = await this.getUserDoc(uid).get();
+        if (!arSnapshot.exists) throw new FirestoreRolesAccountDoesntExistError("Account doesnt exist");
+        const ar = arSnapshot.data() as AccountRecord;
+        AccountRecord.validate(ar, this.config);
+        return ar;
+    }
+
     private async doRequestRoles(uid: string, newRolesToRequest: string[]) {
         const accountRecord = await this.getAccountRecord(uid);
         const updatedRequestedRoles = _.uniq([...accountRecord.requestedRoles, ...newRolesToRequest]);
@@ -86,14 +94,6 @@ export class FirestoreRoles {
         const accountRecord = await this.getAccountRecord(uid);
         const updatedRequestedRoles = _.without(accountRecord.requestedRoles, ...rolesToRemove);
         await this.saveRequestedRoles(uid, updatedRequestedRoles);
-    }
-
-    private async getAccountRecord(uid: string): Promise<AccountRecord> {
-        const arSnapshot = await this.getUserDoc(uid).get();
-        if (!arSnapshot.exists) throw new FirestoreRolesAccountDoesntExistError("Account doesnt exist");
-        const ar = arSnapshot.data() as AccountRecord;
-        AccountRecord.validate(ar, this.config);
-        return ar;
     }
 
     private async saveAccountRecord(accountRecord: AccountRecord) {

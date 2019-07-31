@@ -198,4 +198,13 @@ describe("FirestoreRoles", function() {
                 .that.has.members(["editor"]);
         });
     });
+
+    describe("getAccountRecord", () => {
+        it("Throws FirestoreRolesAccountDoesntExistError for non-existent record", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await expect(roles.getAccountRecord("nonexistent-uid"))
+                .to.eventually.be.rejectedWith("Account doesnt exist")
+                .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
+        });
+    });
 });

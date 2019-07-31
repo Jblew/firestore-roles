@@ -201,7 +201,7 @@ describe("FirestoreRoles", function() {
 
     describe("getAccountRecord", () => {
         it("Throws FirestoreRolesAccountDoesntExistError for non-existent record", async () => {
-            const { roles, sampleAccount } = mock(config);
+            const { roles } = mock(config);
             await expect(roles.getAccountRecord("nonexistent-uid"))
                 .to.eventually.be.rejectedWith("Account doesnt exist")
                 .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");

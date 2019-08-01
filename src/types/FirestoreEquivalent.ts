@@ -7,13 +7,21 @@ export interface FirestoreEquivalent {
 export namespace FirestoreEquivalent {
     export interface CollectionReferenceEquivalent {
         doc(name: string): DocumentReferenceEquivalent;
+        get(): Promise<QuerySnapshot>;
+    }
+
+    export interface QuerySnapshot {
+        docs: QueryDocumentSnapshot[];
+    }
+
+    export interface QueryDocumentSnapshot {
+        id: string;
+        exists: boolean;
+        data(): object | undefined;
     }
 
     export interface DocumentReferenceEquivalent {
-        get(): Promise<{
-            exists: boolean;
-            data(): object | undefined;
-        }>;
+        get(): Promise<QueryDocumentSnapshot>;
         set(record: object): Promise<any>;
         update(record: object): Promise<any>;
         delete(): Promise<any>;

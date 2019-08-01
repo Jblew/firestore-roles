@@ -8,18 +8,16 @@ export interface AccountRecord extends FirebaseAccount {
     email: string | null;
     phoneNumber: string | null;
     photoURL: string | null;
-    providerId: string;
     uid: string;
 }
 
 export namespace AccountRecord {
     export function validate(ar: AccountRecord, config: Configuration) {
         ow(ar.uid, "AccountRecord.uid", ow.string.nonEmpty);
-        ow(ar.providerId, "AccountRecord.providerId", ow.string.nonEmpty);
         ow(ar.displayName, "AccountRecord.displayName", ow.any(ow.null, ow.string.nonEmpty));
         ow(ar.email, "AccountRecord.email", ow.any(ow.null, ow.string.nonEmpty));
         ow(ar.phoneNumber, "AccountRecord.phoneNumber", ow.any(ow.null, ow.string.nonEmpty));
-        ow(ar.providerId, "AccountRecord.providerId", ow.any(ow.null, ow.string.nonEmpty));
+        ow(ar.photoURL, "AccountRecord.photoURL", ow.any(ow.null, ow.string.nonEmpty));
     }
 
     export const KEYS: { [x in keyof AccountRecord]: keyof AccountRecord } = Object.freeze({
@@ -27,7 +25,6 @@ export namespace AccountRecord {
         email: "email",
         phoneNumber: "phoneNumber",
         photoURL: "photoURL",
-        providerId: "providerId",
         uid: "uid",
     });
 }

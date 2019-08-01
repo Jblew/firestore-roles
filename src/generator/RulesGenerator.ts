@@ -76,7 +76,7 @@ export class RulesGenerator {
         for (const roleName of _.keys(this.config.roles)) {
             const role: Role = this.config.roles[roleName];
             const managedRolesStatement = role.manages
-                .map(managedRole => ` || userHasRole("${managedRole}", uid)`)
+                .map(managedRole => ` || userHasRole("${managedRole}", uid) || userRequestsRole("${managedRole}", uid)`)
                 .join("");
             statements.push(`${indentation} || callerHasRole("${roleName}") && (false${managedRolesStatement})`);
         }
@@ -127,6 +127,10 @@ ${this.indent(this.innerRules, "    ")}
 
     function userHasRole(role, uid) {
         return docExistsInCollection("${this.config.roleCollectionPrefix}" + role, uid);
+    }
+
+    function userRequestsRole(role, uid) {
+        return docExistsInCollection("${this.config.roleRequestsCollectionPrefix}" + role, uid);
     }
 
     function callerHasRole(role) {

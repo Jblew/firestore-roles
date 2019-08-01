@@ -50,6 +50,15 @@ describe("RulesGenerator", function() {
                 await assert.isFulfilled(userDoc(col, managedUser.account.uid).get());
             });
 
+            it("Can get data of account that requests a role he manages", async () => {
+                const { userDoc, adminDoc } = await mock({ uid: manager.account.uid, config, projectId });
+                await adminDoc(
+                    `${config.roleRequestsCollectionPrefix}${managedUser.role}`,
+                    notManagedUser.account.uid,
+                ).set(FirestoreRecordKeeper);
+                await assert.isFulfilled(userDoc(col, notManagedUser.account.uid).get());
+            });
+
             it("Cannot get data of account that doesn't have a role he manages", async () => {
                 const { userDoc } = await mock({ uid: manager.account.uid, config, projectId });
 

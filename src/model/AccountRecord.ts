@@ -25,6 +25,7 @@ export namespace AccountRecord {
         email: "email",
         phoneNumber: "phoneNumber",
         photoURL: "photoURL",
+        providerId: "providerId",
         uid: "uid",
     });
 }

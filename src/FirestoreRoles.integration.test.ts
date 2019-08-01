@@ -4,7 +4,7 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as _ from "lodash";
 import "mocha";
 
-import { Configuration } from "./Configuration";
+import { Configuration } from "./config/Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
 import { cleanupEach, getAccountRecord, mock, startupAll } from "./FirestoreRoles.mock.integration.test";
 import { FirebaseAccount } from "./types/FirebaseAccount";

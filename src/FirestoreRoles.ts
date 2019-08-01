@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import ow from "ow";
 
-import { Configuration } from "./Configuration";
+import { Configuration } from "./config/Configuration";
 import { FirestoreRolesAccountDoesntExistError } from "./error/FirestoreRolesAccountDoesntExistError";
 import { AccountRecord } from "./model/AccountRecord";
 import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";

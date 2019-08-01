@@ -2,20 +2,21 @@
 import * as _ from "lodash";
 import ow from "ow";
 
-import { FirestoreRolesRoleNotDefinedError } from "./error/FirestoreRolesRoleNotDefinedError";
-import { ow_catch } from "./util";
+import { FirestoreRolesRoleNotDefinedError } from "../error/FirestoreRolesRoleNotDefinedError";
+import { Role } from "../model/role";
+import { ow_catch } from "../util";
 
 export interface Configuration extends Configuration.Optional {
     accountsCollection: string;
     roleCollectionPrefix: string;
-    roles: { [k: string]: Configuration.Role };
+    roles: { [k: string]: Role };
 }
 
 export namespace Configuration {
     export interface Optional {
         accountsCollection?: string;
         roleCollectionPrefix?: string;
-        roles?: { [k: string]: Configuration.Role };
+        roles?: { [k: string]: Role };
     }
 
     export function validate(c: Configuration, pref: string = "") {
@@ -26,9 +27,7 @@ export namespace Configuration {
         ow(
             c.roles,
             `${pref} Configuration.roles`,
-            ow.object.valuesOfType(
-                ow.object.is(o => ow_catch(() => Configuration.Role.validate(o as Role, roleNames))),
-            ),
+            ow.object.valuesOfType(ow.object.is(o => ow_catch(() => Role.validate(o as Role, roleNames)))),
         );
     }
 
@@ -49,14 +48,4 @@ export namespace Configuration {
             editor: { manages: [] },
         },
     };
-
-    export interface Role {
-        manages: string[];
-    }
-
-    export namespace Role {
-        export function validate(role: Role, roleNames: string[], pref: string = "") {
-            ow(role.manages, `${pref}Role.manages`, ow.array.ofType(ow.string.nonEmpty.oneOf(roleNames)));
-        }
-    }
 }

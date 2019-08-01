@@ -6,7 +6,7 @@ import * as _ from "lodash";
 import "mocha";
 import * as path from "path";
 
-import { Configuration } from "../Configuration";
+import { Configuration } from "../config/Configuration";
 
 import { Cli } from "./cli";
 import { createTempDir, deleteTempDir, LoggerMock } from "./cli.mock.integration.test";

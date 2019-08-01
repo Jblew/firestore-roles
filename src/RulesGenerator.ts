@@ -2,7 +2,8 @@
 import * as _ from "lodash";
 import ow from "ow";
 
-import { Configuration } from "./Configuration";
+import { Configuration } from "./config/Configuration";
+import { Role } from "./model/Role";
 
 export class RulesGenerator {
     private config: Configuration;
@@ -63,7 +64,7 @@ export class RulesGenerator {
         const indentation = "               ";
         const statements: string[] = [];
         for (const roleName of _.keys(this.config.roles)) {
-            const role: Configuration.Role = this.config.roles[roleName];
+            const role: Role = this.config.roles[roleName];
             const managedRolesStatement = role.manages
                 .map(managedRole => ` || userHasRole("${managedRole}", uid)`)
                 .join("");

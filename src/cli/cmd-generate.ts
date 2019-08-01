@@ -1,4 +1,4 @@
-import { Configuration } from "../Configuration";
+import { Configuration } from "../config/Configuration";
 import { RulesGenerator } from "../RulesGenerator";
 
 export async function execGenerateCmd(config: Configuration, customRules: string) {

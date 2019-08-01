@@ -5,7 +5,7 @@ import * as _ from "lodash";
 import "mocha";
 import * as uuid from "uuid";
 
-import { Configuration } from "./Configuration";
+import { Configuration } from "./config/Configuration";
 import { AccountRecord } from "./model/AccountRecord";
 import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
 import { cleanupEach, getSampleAccountRecord, mock } from "./RulesGenerator.mock.integration.test";

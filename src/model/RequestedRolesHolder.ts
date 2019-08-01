@@ -1,6 +1,6 @@
 import ow from "ow";
 
-import { Configuration } from "../Configuration";
+import { Configuration } from "../config/Configuration";
 
 export interface RequestedRolesHolder {
     requestedRoles: string[];

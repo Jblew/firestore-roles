@@ -2,11 +2,12 @@ import * as fs from "fs";
 import ow from "ow";
 import * as path from "path";
 
+import { Configuration } from "../config/Configuration";
+
 import { CliError } from "./CliError";
 import { execGenerateCmd } from "./cmd-generate";
 import { getUsage } from "./usage";
 import { assertFileExists, resolveFile } from "./util";
-import { Configuration } from "../Configuration";
 
 export class Cli {
     private logger: Cli.Logger;

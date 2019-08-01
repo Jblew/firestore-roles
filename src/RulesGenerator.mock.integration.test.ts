@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import "mocha";
 import * as uuid from "uuid/v4";
 
-import { Configuration } from "./Configuration";
+import { Configuration } from "./config/Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
 import { AccountRecord } from "./model/AccountRecord";
 import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";

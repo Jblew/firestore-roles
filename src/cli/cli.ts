@@ -6,6 +6,7 @@ import { CliError } from "./CliError";
 import { execGenerateCmd } from "./cmd-generate";
 import { getUsage } from "./usage";
 import { assertFileExists, resolveFile } from "./util";
+import { Configuration } from "../Configuration";
 
 export class Cli {
     private logger: Cli.Logger;
@@ -77,7 +78,7 @@ export class Cli {
         assertFileExists(configFile);
         assertFileExists(rulesFile);
 
-        const config = require(configFile);
+        const config = this.requireConfig(configFile);
         const rules = fs.readFileSync(rulesFile, "UTF-8");
         const { output, message } = await execGenerateCmd(config, rules);
         this.logger.log(message);
@@ -88,6 +89,22 @@ export class Cli {
             this.logger.log(`Successfully written to file ${outputFile}`);
         }
         return 0;
+    }
+
+    private requireConfig(configFilePath: string): Configuration {
+        let config = require(configFilePath);
+
+        if (!config.roles && config.default) config = config.default;
+
+        try {
+            Configuration.validate(config);
+            return config as Configuration;
+        } catch (err) {
+            throw new CliError(
+                `Invalid config: \n${JSON.stringify(config, undefined, 2)}\n ${err.name} ${err.message}: ${err.stack}`,
+                err,
+            );
+        }
     }
 }
 /* istanbul ignore next "Namespace init bug" */

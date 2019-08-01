@@ -3,6 +3,7 @@ import { expect, use as chaiUse } from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as _ from "lodash";
 import "mocha";
+import * as uuid from "uuid/v4";
 
 import { Configuration } from "./config/Configuration";
 import { FirestoreRoles } from "./FirestoreRoles";
@@ -52,9 +53,7 @@ describe("FirestoreRoles", function() {
             await roles.registerUser(sampleAccount);
 
             const obtainedAR = await getAccountRecord(sampleAccountDoc);
-            expect(obtainedAR.requestedRoles)
-                .to.be.an("array")
-                .with.length(0);
+            expect(obtainedAR.displayName).to.be.equal(sampleAccount.displayName);
         });
     });
 
@@ -73,6 +72,23 @@ describe("FirestoreRoles", function() {
 
             const exists = await roles.userExists("-other-uid-");
             expect(exists).to.be.equal(false);
+        });
+    });
+
+    describe("getAccountRecord", () => {
+        it("Returns registered user", async () => {
+            const { roles } = mock(config);
+            await expect(roles.getAccountRecord("nonexistent-uid"))
+                .to.eventually.be.rejectedWith("Account doesnt exist")
+                .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
+        });
+
+        it("Throws FirestoreRolesAccountDoesntExistError for non-existent record", async () => {
+            const { roles, sampleAccount } = mock(config);
+            await roles.registerUser(sampleAccount);
+
+            const gotAR = await roles.getAccountRecord(sampleAccount.uid);
+            expect(gotAR.displayName).to.be.equal(sampleAccount.displayName);
         });
     });
 
@@ -131,98 +147,79 @@ describe("FirestoreRoles", function() {
         });
     });
 
-    describe("getRequestedRoles", () => {
-        it("Fails if account doesnt exist", async () => {
-            it("Fails if account doesnt exist", async () => {
-                const { roles } = mock(config);
+    describe("getUidsInRole", () => {
+        it("Returns all uids that has a role", async () => {
+            const uids = [uuid(), uuid(), uuid()];
+            const role = "editor";
+            const { roles } = mock(config);
 
-                await expect(roles.getRequestedRoles("nonexistent-uid"))
-                    .to.eventually.be.rejectedWith("Account doesnt exist")
-                    .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
-            });
-        });
+            for (const uid of uids) {
+                await roles.enableRole(uid, role);
+            }
+            await roles.enableRole("other-uid", "admin");
 
-        it("Returns empty array if account never had requested roles set up", async () => {
-            const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-
-            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
-            expect(gotRoles)
+            const gotUids = await roles.getUidsInRole(role);
+            expect(gotUids)
                 .to.be.an("array")
-                .with.length(0);
-        });
-
-        it("Returns previously set requested roles", async () => {
-            const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-            const reqRoles: string[] = ["manager", "admin"];
-            await roles.requestRoles(sampleAccount.uid, reqRoles);
-            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
-            expect(gotRoles)
+                .with.length(uids.length);
+            expect(gotUids)
                 .to.be.an("array")
-                .that.has.members(reqRoles);
+                .that.has.members(uids);
         });
     });
 
-    describe("requestRoles", () => {
-        it("Adds specified roles to requestedRoles", async () => {
+    describe("requestRole", () => {
+        it("Requests a role", async () => {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
-            const reqRoles: string[] = ["manager", "admin"];
-            await roles.requestRoles(sampleAccount.uid, reqRoles);
+            const reqRole = "manager";
+            await roles.requestRole(sampleAccount.uid, reqRole);
 
-            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .that.has.members(reqRoles);
+            expect(await roles.isRoleRequestedByUser(sampleAccount.uid, reqRole)).to.be.equal(true);
         });
 
         it("Fails to request not defined role", async () => {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
-            const reqRoles = ["nonexistent-role"];
-            await expect(roles.requestRoles(sampleAccount.uid, reqRoles)).to.eventually.be.rejectedWith(
-                "Expected string `e` `nonexistent-role`",
+            const reqRole = "nonexistent-role";
+            await expect(roles.requestRole(sampleAccount.uid, reqRole)).to.eventually.be.rejectedWith(
+                "Role 'nonexistent-role' is not defined",
             );
         });
+    });
 
-        it("Does not remove previous roles when adding new ones", async () => {
+    describe("removeRoleRequest", () => {
+        it("Removes previously requested role from requests", async () => {
             const { roles, sampleAccount } = mock(config);
             await roles.registerUser(sampleAccount);
-            const reqRoles: string[] = ["manager"];
-            await roles.requestRoles(sampleAccount.uid, reqRoles);
+            const reqRole = "manager";
 
-            const reqRoles2: string[] = ["admin"];
-            await roles.requestRoles(sampleAccount.uid, reqRoles2);
+            await roles.requestRole(sampleAccount.uid, reqRole);
+            expect(await roles.isRoleRequestedByUser(sampleAccount.uid, reqRole)).to.be.equal(true);
 
-            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .that.has.members([...reqRoles, ...reqRoles2]);
+            await roles.removeRoleRequest(sampleAccount.uid, reqRole);
+            expect(await roles.isRoleRequestedByUser(sampleAccount.uid, reqRole)).to.be.equal(false);
         });
     });
 
-    describe("removeFromRequestedRoles", () => {
-        it("Removes only specified roles from requested roles", async () => {
-            const { roles, sampleAccount } = mock(config);
-            await roles.registerUser(sampleAccount);
-            const reqRoles: string[] = ["manager", "admin", "editor"];
-            await roles.requestRoles(sampleAccount.uid, reqRoles);
-            await roles.removeFromRequestedRoles(sampleAccount.uid, ["manager", "admin"]);
-
-            const gotRoles = await roles.getRequestedRoles(sampleAccount.uid);
-            expect(gotRoles)
-                .to.be.an("array")
-                .that.has.members(["editor"]);
-        });
-    });
-
-    describe("getAccountRecord", () => {
-        it("Throws FirestoreRolesAccountDoesntExistError for non-existent record", async () => {
+    describe("getUidsRequestingRole", () => {
+        it("Returns all uids that has a role", async () => {
+            const uids = [uuid(), uuid(), uuid()];
+            const role = "editor";
             const { roles } = mock(config);
-            await expect(roles.getAccountRecord("nonexistent-uid"))
-                .to.eventually.be.rejectedWith("Account doesnt exist")
-                .that.haveOwnProperty("firestoreRolesAccountDoesntExistError");
+
+            for (const uid of uids) {
+                await roles.requestRole(uid, role);
+            }
+            await roles.requestRole("other-uid", "admin");
+
+            const gotUids = await roles.getUidsRequestingRole(role);
+            expect(gotUids)
+                .to.be.an("array")
+                .with.length(uids.length);
+            expect(gotUids)
+                .to.be.an("array")
+                .that.has.members(uids);
         });
     });
 });

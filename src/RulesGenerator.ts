@@ -57,6 +57,16 @@ export class RulesGenerator {
         );
         allow update: if false;
     }
+
+    match /${this.config.roleRequestsCollectionPrefix}${roleName}/{uid} {
+        allow get: if isAuthenticated();
+        allow create: if isAuthenticated() && allowCreateOwnUid(uid);
+        allow read, list, delete: if isAuthenticated() && ( false
+                // managers of the ${roleName} role:
+                ${managerStatements}
+        );
+        allow update: if false;
+    }
         `;
     }
 
@@ -123,9 +133,13 @@ ${this.indent(this.customRules, "    ")}
         return userHasRole(role, request.auth.uid);
     }
 
+    function allowCreateOwnUid(uid) {
+        return request.auth.uid == uid;
+    }
+
     function allowAccountCreateWithNonFakeParams(uid) {
         return isAuthenticated()
-             && request.auth.uid == uid
+             && allowCreateOwnUid(uid)
              && request.auth.token.email == request.resource.data.email
              && request.auth.token.name == request.resource.data.displayName
             ;

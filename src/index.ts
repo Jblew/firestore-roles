@@ -2,7 +2,7 @@ import { FirestoreRoles } from "./FirestoreRoles";
 
 export { Configuration as FirestoreRolesConfiguration } from "./config/Configuration";
 export { FirestoreRoles } from "./FirestoreRoles";
-export { RulesGenerator as FirestoreRulesGenerator } from "./RulesGenerator";
+export { RulesGenerator as FirestoreRulesGenerator } from "./generator/RulesGenerator";
 
 export { FirestoreRolesError } from "./error/FirestoreRolesError";
 export { FirestoreRolesAccountDoesntExistError } from "./error/FirestoreRolesAccountDoesntExistError";

@@ -1,5 +1,5 @@
 import { Configuration } from "../config/Configuration";
-import { RulesGenerator } from "../RulesGenerator";
+import { RulesGenerator } from "../generator/RulesGenerator";
 
 export async function execGenerateCmd(config: Configuration, customRules: string) {
     Configuration.validate(config);

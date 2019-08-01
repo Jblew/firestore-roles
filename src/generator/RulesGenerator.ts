@@ -2,8 +2,8 @@
 import * as _ from "lodash";
 import ow from "ow";
 
-import { Configuration } from "./config/Configuration";
-import { Role } from "./model/Role";
+import { Configuration } from "../config/Configuration";
+import { Role } from "../model/Role";
 
 export class RulesGenerator {
     private config: Configuration;

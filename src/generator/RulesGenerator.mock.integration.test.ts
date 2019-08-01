@@ -4,10 +4,11 @@ import * as _ from "lodash";
 import "mocha";
 import * as uuid from "uuid/v4";
 
-import { Configuration } from "./config/Configuration";
-import { FirestoreRoles } from "./FirestoreRoles";
-import { AccountRecord } from "./model/AccountRecord";
-import { FirestoreRecordKeeper } from "./model/FirestoreRecordKeeper";
+import { Configuration } from "../config/Configuration";
+import { FirestoreRoles } from "../FirestoreRoles";
+import { AccountRecord } from "../model/AccountRecord";
+import { FirestoreRecordKeeper } from "../model/FirestoreRecordKeeper";
+
 import { RulesGenerator } from "./RulesGenerator";
 
 export async function mock(props: {
@@ -81,7 +82,6 @@ export function getSampleAccountRecord(uid: string): AccountRecord & { displayNa
         providerId: "google",
         photoURL: null,
         phoneNumber: null,
-        requestedRoles: [],
     };
 }
 
@@ -97,3 +97,15 @@ export function d<T>(v: T | undefined): T {
     if (typeof v === "undefined") throw new Error("Undefined parameter of d() method");
     return v;
 }
+
+export const config: Configuration = {
+    accountsCollection: "accounts",
+    roleCollectionPrefix: "role_",
+    roleRequestsCollectionPrefix: "role_requests_",
+    roles: {
+        admin: { manages: ["manager", "editor", "reviewer"] },
+        manager: { manages: ["editor", "reviewer"] },
+        editor: { manages: [] },
+        reviewer: { manages: [] },
+    },
+};

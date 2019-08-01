@@ -3,7 +3,7 @@ import * as _ from "lodash";
 import ow from "ow";
 
 import { FirestoreRolesRoleNotDefinedError } from "../error/FirestoreRolesRoleNotDefinedError";
-import { Role } from "../model/role";
+import { Role } from "../model/Role";
 import { ow_catch } from "../util";
 
 export interface Configuration extends Configuration.Optional {

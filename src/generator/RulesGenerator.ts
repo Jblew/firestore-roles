@@ -7,14 +7,14 @@ import { Role } from "../model/Role";
 
 export class RulesGenerator {
     private config: Configuration;
-    private customRules: string;
+    private innerRules: string;
 
-    public constructor(config: Configuration, customRules: string = RulesGenerator.DEFAULT_CUSTOM_RULES) {
+    public constructor(config: Configuration, innerRules: string) {
         Configuration.validate(config, "RulesGenerator.constructor(config) ");
         this.config = config;
 
-        ow(customRules, "customRules", ow.string);
-        this.customRules = customRules;
+        ow(innerRules, "innerRules", ow.string);
+        this.innerRules = innerRules;
     }
 
     public asString(): string {
@@ -105,7 +105,7 @@ ${this.constructAccountReadStatements()}
     }
     ${this.constructRoleManagementStatements()}
 
-${this.indent(this.customRules, "    ")}
+${this.indent(this.innerRules, "    ")}
   }
 }
     `;

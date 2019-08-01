@@ -8,7 +8,7 @@ with Configuration interface.
 Example:
 
 // firestore-roles.config.js
-exports = {
+module.exports = {
     accountsCollection: "accounts",
     roleCollectionPrefix: "role_",
     roles: {

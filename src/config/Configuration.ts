@@ -9,6 +9,7 @@ import { ow_catch } from "../util";
 export interface Configuration extends Configuration.Optional {
     accountsCollection: string;
     roleCollectionPrefix: string;
+    roleRequestsCollectionPrefix: string;
     roles: { [k: string]: Role };
 }
 
@@ -22,6 +23,7 @@ export namespace Configuration {
     export function validate(c: Configuration, pref: string = "") {
         ow(c.accountsCollection, `${pref}Configuration.accountsCollection`, ow.string.nonEmpty);
         ow(c.roleCollectionPrefix, `${pref}Configuration.roleCollectionPrefix`, ow.string.nonEmpty);
+        ow(c.roleRequestsCollectionPrefix, `${pref}Configuration.roleRequestsCollectionPrefix`, ow.string.nonEmpty);
 
         const roleNames = _.keys(c.roles);
         ow(
@@ -42,6 +44,7 @@ export namespace Configuration {
     export const DEFAULT: Configuration = {
         accountsCollection: "accounts",
         roleCollectionPrefix: "role_",
+        roleRequestsCollectionPrefix: "role_requests_",
         roles: {
             admin: { manages: ["manager", "editor"] },
             manager: { manages: ["editor"] },

@@ -29,6 +29,7 @@ describe("Configuration", () => {
     const config: Configuration = {
         accountsCollection: "accounts",
         roleCollectionPrefix: "role_",
+        roleRequestsCollectionPrefix: "role_requests_",
         roles: {
             admin: { manages: ["manager", "editor"] },
             manager: { manages: ["editor"] },

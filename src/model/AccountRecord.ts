@@ -1,6 +1,5 @@
 import ow from "ow";
 
-import { Configuration } from "../config/Configuration";
 import { FirebaseAccount } from "../types/FirebaseAccount";
 
 export interface AccountRecord extends FirebaseAccount {

@@ -12,7 +12,7 @@ export interface AccountRecord extends FirebaseAccount {
 }
 
 export namespace AccountRecord {
-    export function validate(ar: AccountRecord, config: Configuration) {
+    export function validate(ar: AccountRecord) {
         ow(ar.uid, "AccountRecord.uid", ow.string.nonEmpty);
         ow(ar.displayName, "AccountRecord.displayName", ow.any(ow.null, ow.string.nonEmpty));
         ow(ar.email, "AccountRecord.email", ow.any(ow.null, ow.string.nonEmpty));

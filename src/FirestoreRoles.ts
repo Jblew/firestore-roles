@@ -35,7 +35,7 @@ export class FirestoreRoles {
         const arSnapshot = await this.getUserDoc(uid).get();
         if (!arSnapshot.exists) throw new FirestoreRolesAccountDoesntExistError("Account doesnt exist");
         const ar = arSnapshot.data() as AccountRecord;
-        AccountRecord.validate(ar, this.config);
+        AccountRecord.validate(ar);
         return ar;
     }
 
@@ -115,7 +115,7 @@ export class FirestoreRoles {
     }
 
     private async saveAccountRecord(accountRecord: AccountRecord) {
-        AccountRecord.validate(accountRecord, this.config);
+        AccountRecord.validate(accountRecord);
         await this.getUserDoc(accountRecord.uid).set(accountRecord);
     }
 

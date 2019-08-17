@@ -19,7 +19,7 @@ export namespace AccountRecord {
         ow(ar.photoURL, "AccountRecord.photoURL", ow.any(ow.null, ow.string.nonEmpty));
     }
 
-    export const KEYS: { [x in keyof AccountRecord]: keyof AccountRecord } = Object.freeze({
+    export const KEYS: Readonly<{ [x in keyof AccountRecord]: keyof AccountRecord }> = Object.freeze({
         displayName: "displayName",
         email: "email",
         phoneNumber: "phoneNumber",
@@ -27,4 +27,29 @@ export namespace AccountRecord {
         providerId: "providerId",
         uid: "uid",
     });
+
+    export function fromFirebaseUserInfo(
+        userInfo: FirebaseUserInfoEquivalent,
+        importOptions: { includePhoneNumber: boolean } = { includePhoneNumber: false },
+    ): AccountRecord {
+        const account: AccountRecord = {
+            uid: userInfo.uid,
+            displayName: userInfo.displayName,
+            email: userInfo.email,
+            providerId: userInfo.providerId,
+            phoneNumber: importOptions.includePhoneNumber ? userInfo.phoneNumber : null,
+            photoURL: userInfo.photoURL,
+        };
+        AccountRecord.validate(account);
+        return account;
+    }
+
+    export interface FirebaseUserInfoEquivalent {
+        displayName: string | null;
+        email: string | null;
+        phoneNumber: string | null;
+        photoURL: string | null;
+        providerId: string;
+        uid: string;
+    }
 }

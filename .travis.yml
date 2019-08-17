@@ -23,7 +23,7 @@ deploy:
     - provider: script
       script: npx semantic-release
       skip_cleanup: true
-      node_js: 8
+      node_js: 10
       on:
           tags: false
           branch: master

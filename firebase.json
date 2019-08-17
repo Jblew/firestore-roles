@@ -2,7 +2,7 @@
      "firestore": {},
      "emulators": {
          "firestore": {
-             "port": "9081"
+             "port": "9082"
          }
      }
  }

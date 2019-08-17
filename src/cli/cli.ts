@@ -60,17 +60,20 @@ export class Cli {
                 break;
 
             default:
+                /* istanbul ignore next */
                 return this.exitWithUsage();
         }
     }
 
     private async processGenerateCmd(args: string[]): Promise<number> {
+        /* istanbul ignore if */
         if (args.length < 2 || args.length > 3) {
             /* istanbul ignore next "This was already checked previously" */ return this.exitWithUsage();
         }
 
         let outputFile: string | undefined;
         const [configFileUnresolved, rulesFileUnresolved] = args;
+        /* istanbul ignore else */
         if (args.length === 3) outputFile = resolveFile(args[2]);
 
         const configFile = resolveFile(path.resolve(configFileUnresolved));
@@ -85,6 +88,7 @@ export class Cli {
         this.logger.log(message);
         this.logger.log("");
 
+        /* istanbul ignore else */
         if (outputFile) {
             fs.writeFileSync(outputFile, output, "UTF-8");
             this.logger.log(`Successfully written to file ${outputFile}`);

@@ -1,0 +1,8 @@
+ {
+     "firestore": {},
+     "emulators": {
+         "firestore": {
+             "port": "9081"
+         }
+     }
+ }

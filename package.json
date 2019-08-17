@@ -29,7 +29,7 @@
     "prepare": "NODE_ENV=production npm run build",
     "test": "find src -name '*.spec.test.ts' | TS_NODE_FILES=true TS_NODE_CACHE=false TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' xargs mocha -r ts-node/register --require source-map-support/register",
     "do_verify": "find src -name '*.integration.test.ts' | TS_NODE_FILES=true TS_NODE_CACHE=false TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' xargs mocha -r ts-node/register --require source-map-support/register",
-    "verify": "firebase emulators:exec --only firestore --token=\"$FIREBASE_EMULATOR_TOKEN\" \"npm run do_verify\"",
+    "verify": "firebase emulators:exec --only firestore --token=\"emulator-token\" \"npm run do_verify\"",
     "lint-fix": "tslint --fix -c tslint.json -p tsconfig.lint.json",
     "testall": "npm run test && npm run verify",
     "testall-with-coverage": "nyc npm run testall",

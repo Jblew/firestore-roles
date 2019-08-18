@@ -5,6 +5,7 @@
 
 - Ecosystem
   - [Vuex module](https://github.com/jblew/firestore-roles-vuex-module) with type-guarded actions dispatch
+  - [Redux module](https://github.com/jblew/firestore-roles-redux-module)
   - [Roles manager UI](https://github.com/Jblew/firestore-roles-manager-ui/) packaged as a library that can be easily deployed.
 - Declarative and exportable [configuration](#configuration)
 - Role request support: users can request granting a role

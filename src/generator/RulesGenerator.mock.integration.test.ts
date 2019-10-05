@@ -15,7 +15,7 @@ export async function mock(props: {
     uid: string | undefined;
     config: Configuration;
     customRules?: string;
-    auth?: { email: string; name: string };
+    auth?: { email: string; name?: string };
     projectId?: string;
 }) {
     const projectId = props.projectId || `unit-testing-${uuid()}`;

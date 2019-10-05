@@ -36,6 +36,17 @@ describe("RulesGenerator", function() {
                 await assert.isFulfilled(userDoc(col, uid).set(acc));
             });
 
+            it("Can create account without name", async () => {
+                const acc = getSampleAccountRecord(uuid());
+                const { userDoc, uid } = await mock({
+                    uid: acc.uid,
+                    config,
+                    auth: { email: acc.email },
+                });
+
+                await assert.isFulfilled(userDoc(col, uid).set(acc));
+            });
+
             it("Cannot create account with not own uid", async () => {
                 const acc = getSampleAccountRecord(uuid());
                 const { userDoc } = await mock({

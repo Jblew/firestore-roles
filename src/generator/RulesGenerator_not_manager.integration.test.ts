@@ -73,19 +73,6 @@ describe("RulesGenerator", function() {
                 await assert.isRejected(userDoc(col, uid).set(acc), /PERMISSION_DENIED/);
             });
 
-            it("Cannot create account with displayName mismatch", async () => {
-                const acc = getSampleAccountRecord(uuid());
-                const { userDoc, uid } = await mock({
-                    uid: acc.uid,
-                    config,
-                    auth: { email: acc.email, name: acc.displayName },
-                });
-
-                acc.displayName = "Fake display name";
-
-                await assert.isRejected(userDoc(col, uid).set(acc), /PERMISSION_DENIED/);
-            });
-
             it("Can read account with own uid", async () => {
                 const { userDoc, uid, createAccount } = await mock({ uid: uuid(), config });
                 const createdAccount = await createAccount(uid);

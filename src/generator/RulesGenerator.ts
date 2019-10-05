@@ -145,7 +145,6 @@ ${this.indent(this.innerRules, "    ")}
         return isAuthenticated()
              && allowCreateOwnUid(uid)
              && request.auth.token.email == request.resource.data.email
-             && request.auth.token.name == request.resource.data.displayName
             ;
     }
     `);
